@@ -5,6 +5,8 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   base: "/super-chinese-checkers/",
+  server: { allowedHosts: [".ts.net"] },
+  preview: { allowedHosts: [".ts.net"] },
   plugins: [
     react(),
     tailwindcss(),
