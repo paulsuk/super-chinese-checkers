@@ -15,6 +15,7 @@ export default function GestureLayer({ view, onTap, children }: Props) {
   const ptrs = useRef(new Map<number, Ptr>());
   const moved = useRef(0);
   const multi = useRef(false);
+  const lastClient = useRef<{ x: number; y: number } | null>(null);
 
   const toView = (e: React.PointerEvent): Ptr | null => {
     const svg = ref.current?.querySelector("svg");
@@ -30,7 +31,11 @@ export default function GestureLayer({ view, onTap, children }: Props) {
     const p = toView(e);
     if (!p) return;
     ptrs.current.set(e.pointerId, p);
-    if (ptrs.current.size === 1) { moved.current = 0; multi.current = false; }
+    if (ptrs.current.size === 1) {
+      moved.current = 0;
+      multi.current = false;
+      lastClient.current = { x: e.clientX, y: e.clientY };
+    }
     else multi.current = true;
   };
 
@@ -40,7 +45,10 @@ export default function GestureLayer({ view, onTap, children }: Props) {
     if (!prev || !p) return;
     const all = [...ptrs.current.entries()];
     if (all.length === 1) {
-      moved.current += Math.hypot(p.x - prev.x, p.y - prev.y);
+      if (lastClient.current) {
+        moved.current += Math.hypot(e.clientX - lastClient.current.x, e.clientY - lastClient.current.y);
+      }
+      lastClient.current = { x: e.clientX, y: e.clientY };
       view.apply({ dx: p.x - prev.x, dy: p.y - prev.y, dScale: 1, dAngle: 0, cx: p.x, cy: p.y });
     } else if (all.length === 2) {
       const otherId = all.find(([id]) => id !== e.pointerId)![0];
