@@ -3,8 +3,10 @@
 House-rules ("super" variant) Chinese checkers as an offline-first PWA for two players
 pass-and-play on iPhone/iPad. Deploys to `https://paulsuk.github.io/super-chinese-checkers/`.
 
-**Status:** v1 implemented (engine + UI + PWA), awaiting on-device QA and first deploy.
-Design spec + plan are in local-only `work\specs\` (never committed).
+**Status:** live at `https://paulsuk.github.io/super-chinese-checkers/` (installable PWA).
+Repo `paulsuk/super-chinese-checkers` (public); `origin` remote; GitHub Pages source =
+GitHub Actions; **auto-deploys on every push to `master`** (`.github/workflows/deploy.yml`
+runs tests + build + deploy). Paul controls all pushes.
 
 ## Rules of the game (summary)
 
@@ -19,5 +21,11 @@ taken = margin of victory. App enforces rules but shows no hints. Full detail in
 
 - Stack: Vite + React + TS + Tailwind; pure-TS rules engine in `src/engine/` (no React
   imports), state/persistence in `src/state/`, components in `src/ui/`.
-- Engine changes require Vitest coverage; UI verified on-device over LAN before deploy.
+- Engine changes require Vitest coverage; UI verified on-device before deploy. Pure logic
+  extracted from UI (e.g. `src/ui/setupDraft.ts`) is unit-tested; there is no DOM test env.
+- Per-game display lives in `GameMeta { palette[6], players[2] }` (`src/state/meta.ts`, own
+  IndexedDB key) — the engine stays display-agnostic (`ColorId` 0-5 = corner identity).
+- Stats are name-based (`winnerName`/`loserName`); roster + stats-exempt `Guest` pseudo-player;
+  named-vs-Guest records for the real player (W/L), Guest excluded from standings; both-Guest
+  not recorded. Setup screen drafts colors via pointer drag-and-drop (touch-safe).
 - Session ritual, doc placement, `work\` rules: see `..\POLICIES.md`.
