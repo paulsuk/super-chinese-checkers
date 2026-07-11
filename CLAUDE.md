@@ -3,8 +3,8 @@
 House-rules ("super" variant) Chinese checkers as an offline-first PWA for two players
 pass-and-play on iPhone/iPad. Deploys to `https://paulsuk.github.io/super-chinese-checkers/`.
 
-**Status:** design approved, no code yet. Design spec:
-`work\specs\2026-07-10-super-chinese-checkers-design.md`.
+**Status:** v1 implemented (engine + UI + PWA), awaiting on-device QA and first deploy.
+Design spec + plan are in local-only `work\specs\` (never committed).
 
 ## Rules of the game (summary)
 

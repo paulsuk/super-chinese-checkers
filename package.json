@@ -1,17 +1,14 @@
 {
   "name": "super-chinese-checkers",
   "version": "0.1.0",
-  "main": "index.js",
   "scripts": {
     "test": "vitest run",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Offline-first PWA of a house-rules Chinese checkers variant",
   "type": "module",
   "dependencies": {
     "idb-keyval": "^6.3.0",
@@ -28,5 +25,6 @@
     "vite": "^8.1.4",
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.10"
-  }
+  },
+  "private": true
 }

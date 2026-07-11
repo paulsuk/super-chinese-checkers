@@ -94,7 +94,7 @@ export function applyMove(state: GameState, move: Move): GameState {
       winIndex = history.length - 1;
     }
   } else {
-    toMove = mover; // finish-out: the loser moves every turn
+    toMove = mover; // finish-out: the loser moves every turn (holds only because callers validateMove first — the winner can never pass the toMove gate)
     if (playerFinished(pieces, mover)) phase = "done";
   }
   return { ...state, pieces, history, toMove, phase, winner, winIndex };

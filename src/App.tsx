@@ -31,12 +31,17 @@ export default function App() {
 
   useEffect(() => {
     void (async () => {
-      const [g, s, r] = await Promise.all([loadGame(), loadSettings(), loadRecords()]);
-      setGame(g ?? null);
-      setSettings(s);
-      setRecords(r);
-      setLoaded(true);
-    })().catch(console.error);
+      try {
+        const [g, s, r] = await Promise.all([loadGame(), loadSettings(), loadRecords()]);
+        setGame(g ?? null);
+        setSettings(s);
+        setRecords(r);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoaded(true);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -62,6 +67,7 @@ export default function App() {
 
   const startNew = () => {
     if (game && game.phase !== "done" && !confirm("Abandon the current game?")) return;
+    input.cancel();
     act({ type: "NEW_GAME", startedAt: new Date().toISOString() });
     setScreen("game");
   };
@@ -118,7 +124,7 @@ export default function App() {
       onSettings={() => setScreen("settings")}
       onDevNearWin={
         import.meta.env.DEV
-          ? () => { setGame(devNearWin(new Date().toISOString())); setScreen("game"); }
+          ? () => { input.cancel(); setGame(devNearWin(new Date().toISOString())); setScreen("game"); }
           : undefined
       }
     />
