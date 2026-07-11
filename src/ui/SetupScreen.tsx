@@ -2,9 +2,10 @@ import { useRef, useState } from "react";
 import { SWATCHES } from "../config/palette";
 import { GUEST } from "../state/meta";
 import type { GameMeta } from "../state/meta";
+import { applyDrop, clearSlot as clearSlotAt, placeFirstEmpty as placeInFirstEmpty } from "./setupDraft";
+import type { DragSource } from "./setupDraft";
 
 // Slot index = ColorId. Slots 0,1,2 = top side (NW,N,NE); 3,4,5 = bottom side (SW,S,SE).
-type DragSource = { hex: string; from: "tray" | number };
 type Ghost = { hex: string; from: "tray" | number; x: number; y: number };
 
 interface Props {
@@ -38,32 +39,8 @@ export default function SetupScreen({ roster, lastMeta, onAddPlayer, onStart, on
     return Number.isNaN(n) ? null : n;
   };
 
-  const placeFirstEmpty = (hex: string) =>
-    setPicks((p) => {
-      const i = p.findIndex((v) => v === null);
-      if (i < 0) return p;
-      const n = [...p];
-      n[i] = hex;
-      return n;
-    });
-
-  const clearSlot = (i: number) => setPicks((p) => p.map((v, j) => (j === i ? null : v)));
-
-  const drop = (src: DragSource, target: number) =>
-    setPicks((p) => {
-      const n = [...p];
-      if (src.from === "tray") {
-        n[target] = src.hex;
-      } else {
-        if (src.from === target) return p;
-        const moving = n[src.from] ?? null;
-        n[src.from] = n[target] ?? null;
-        n[target] = moving;
-      }
-      return n;
-    });
-
   const onDown = (e: React.PointerEvent, src: DragSource) => {
+    if (drag.current) return; // ignore a second concurrent touch mid-drag
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     drag.current = src;
     start.current = { x: e.clientX, y: e.clientY };
@@ -84,17 +61,24 @@ export default function SetupScreen({ roster, lastMeta, onAddPlayer, onStart, on
     if (!src) return;
     if (moved.current) {
       const target = slotAt(e.clientX, e.clientY);
-      if (target !== null) drop(src, target);
+      if (target !== null) setPicks((p) => applyDrop(p, src, target));
     } else if (src.from === "tray") {
-      placeFirstEmpty(src.hex);
+      setPicks((p) => placeInFirstEmpty(p, src.hex));
     } else {
-      clearSlot(src.from);
+      setPicks((p) => clearSlotAt(p, src.from as number));
     }
+  };
+  const onDragCancel = () => {
+    // gesture reclaimed by the OS (Control Center, call, notification) — reset without acting
+    drag.current = null;
+    moved.current = false;
+    setGhost(null);
   };
   const dragHandlers = (src: DragSource) => ({
     onPointerDown: (e: React.PointerEvent) => onDown(e, src),
     onPointerMove: onMove,
     onPointerUp: onUp,
+    onPointerCancel: onDragCancel,
   });
 
   const pickPlayer = (side: 0 | 1, name: string) => {
