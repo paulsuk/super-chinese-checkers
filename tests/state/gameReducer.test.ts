@@ -21,6 +21,7 @@ describe("gameReducer", () => {
     const s1 = gameReducer(s0, { type: "COMMIT_MOVE", move: { color: 1, path: ["1,-5", "1,-4"] } })!;
     expect(gameReducer(s1, { type: "UNDO" })).toEqual(s0);
     expect(gameReducer(s0, { type: "UNDO" })).toBe(s0);
+    expect(gameReducer(null, { type: "UNDO" })).toBeNull();
     const done = { ...s1, phase: "done" as const };
     expect(gameReducer(done, { type: "UNDO" })).toBe(done);
   });
