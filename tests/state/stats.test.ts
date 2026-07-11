@@ -68,6 +68,10 @@ describe("normalizeSettings", () => {
     expect(normalizeSettings(undefined)).toEqual({ roster: ["Paul", "Christina"] });
     expect(normalizeSettings({ roster: ["only-one"] })).toEqual({ roster: ["Paul", "Christina"] });
   });
+  it("excludes Guest from a valid roster array", () => {
+    expect(normalizeSettings({ roster: ["Paul", "Guest", "Christina"] })).toEqual({ roster: ["Paul", "Christina"] });
+    expect(normalizeSettings({ roster: ["Paul", "Guest"] })).toEqual({ roster: ["Paul", "Christina"] });
+  });
 });
 
 describe("migrateRecords", () => {
@@ -99,5 +103,6 @@ describe("export / import", () => {
     expect(parseImport("{}")).toBeNull();
     expect(parseImport(JSON.stringify({ settings: { roster: "nope" }, records: [] }))).toBeNull();
     expect(parseImport(JSON.stringify({ settings: { roster: ["A", "B"] }, records: [{ winner: 0 }] }))).toBeNull();
+    expect(parseImport(JSON.stringify({ settings: { roster: ["Guest", "Paul"] }, records: [] }))).toBeNull();
   });
 });

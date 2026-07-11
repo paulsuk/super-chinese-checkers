@@ -12,7 +12,6 @@ import {
 } from "./state/meta";
 import type { GameMeta } from "./state/meta";
 import { devNearWin } from "./state/devFixtures";
-import { DEFAULT_ASSIGNMENT } from "./config/palette";
 import BoardView, { cellAt } from "./ui/BoardView";
 import GestureLayer from "./ui/GestureLayer";
 import Hud from "./ui/Hud";

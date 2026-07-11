@@ -1,6 +1,6 @@
 import { marginSoFar } from "../engine/rules";
 import type { GameState } from "../engine/types";
-import { ROSTER_DEFAULTS } from "./meta";
+import { GUEST, ROSTER_DEFAULTS } from "./meta";
 import type { GameMeta } from "./meta";
 
 export interface GameRecord {
@@ -75,7 +75,9 @@ export function normalizeSettings(raw: unknown): Settings {
   if (typeof raw === "object" && raw !== null) {
     const o = raw as Record<string, unknown>;
     if (Array.isArray(o.roster) && o.roster.length >= 2 && o.roster.every((n) => typeof n === "string")) {
-      return { roster: o.roster as string[] };
+      const roster = (o.roster as string[]).filter((n) => n !== GUEST);
+      if (roster.length >= 2) return { roster };
+      return { roster: [...ROSTER_DEFAULTS] };
     }
     if (typeof o.p1Name === "string" && typeof o.p2Name === "string") {
       return { roster: [o.p1Name, o.p2Name] };
@@ -118,8 +120,10 @@ export function parseImport(json: string): StatsExport | null {
     const settings = x.settings as Record<string, unknown> | undefined;
     if (!settings || !Array.isArray(settings.roster) || settings.roster.length < 2 ||
         !settings.roster.every((n) => typeof n === "string")) return null;
+    const roster = (settings.roster as string[]).filter((n) => n !== GUEST);
+    if (roster.length < 2) return null;
     if (!Array.isArray(x.records) || !x.records.every(isRecord)) return null;
-    return { settings: { roster: settings.roster as string[] }, records: x.records };
+    return { settings: { roster }, records: x.records };
   } catch {
     return null;
   }
