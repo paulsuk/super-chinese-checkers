@@ -7,7 +7,7 @@ import {
   appendRecord, clearGame, loadGame, loadRecords, loadSettings, saveGame, saveSettings,
 } from "./state/persist";
 import { devNearWin } from "./state/devFixtures";
-import { PLAYER_DEFAULTS } from "./config/palette";
+import { DEFAULT_ASSIGNMENT, PLAYER_DEFAULTS } from "./config/palette";
 import BoardView, { cellAt } from "./ui/BoardView";
 import GestureLayer from "./ui/GestureLayer";
 import Hud from "./ui/Hud";
@@ -94,11 +94,13 @@ export default function App() {
           <BoardView
             pieces={game.pieces} staged={input.staged}
             shake={input.shake} transform={view.transform}
+            palette={DEFAULT_ASSIGNMENT}
           />
         </GestureLayer>
         <Hud
           game={game} names={names}
           stagedReady={!!input.staged && input.staged.path.length >= 2}
+          palette={DEFAULT_ASSIGNMENT}
           onLockIn={input.lockIn}
           onCancel={() => input.cancel()}
           onUndo={() => { input.cancel(); act({ type: "UNDO" }); }}

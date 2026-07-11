@@ -1,12 +1,12 @@
 import { COLORS_OF_PLAYER } from "../engine/board";
 import { marginSoFar } from "../engine/rules";
-import { PALETTE } from "../config/palette";
 import type { GameState } from "../engine/types";
 
 interface Props {
   game: GameState;
   names: [string, string];
   stagedReady: boolean;
+  palette: string[];
   onLockIn(): void;
   onCancel(): void;
   onUndo(): void;
@@ -14,7 +14,7 @@ interface Props {
   onMenu(): void;
 }
 
-export default function Hud({ game, names, stagedReady, onLockIn, onCancel, onUndo, onResetView, onMenu }: Props) {
+export default function Hud({ game, names, stagedReady, palette, onLockIn, onCancel, onUndo, onResetView, onMenu }: Props) {
   const margin = marginSoFar(game);
   return (
     <>
@@ -22,7 +22,7 @@ export default function Hud({ game, names, stagedReady, onLockIn, onCancel, onUn
         <div className="flex items-center gap-2 rounded-xl bg-neutral-800/90 px-3 py-2 text-neutral-100">
           <span className="text-lg font-medium">{names[game.toMove]}</span>
           {COLORS_OF_PLAYER[game.toMove]!.map((c) => (
-            <span key={c} className="inline-block h-4 w-4 rounded-full" style={{ background: PALETTE[c] }} />
+            <span key={c} className="inline-block h-4 w-4 rounded-full" style={{ background: palette[c] }} />
           ))}
           {game.phase === "finishOut" && (
             <span className="ml-2 rounded-md bg-amber-600 px-2 py-0.5 text-sm">
