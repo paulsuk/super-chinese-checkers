@@ -21,6 +21,9 @@ export const loadLastMeta = (): Promise<GameMeta | undefined> => get<GameMeta>(L
 export const isGuestGame = (m: GameMeta): boolean =>
   m.players[0] === GUEST || m.players[1] === GUEST;
 
+export const bothGuestGame = (m: GameMeta): boolean =>
+  m.players[0] === GUEST && m.players[1] === GUEST;
+
 export const defaultMeta = (roster: string[]): GameMeta => ({
   palette: [...DEFAULT_ASSIGNMENT],
   players: [roster[0] ?? ROSTER_DEFAULTS[0]!, roster[1] ?? ROSTER_DEFAULTS[1]!],

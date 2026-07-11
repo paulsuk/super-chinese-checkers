@@ -8,7 +8,7 @@ import {
   replaceRecords, saveGame, saveSettings,
 } from "./state/persist";
 import {
-  clearMeta, defaultMeta, isGuestGame, loadLastMeta, loadMeta, saveLastMeta, saveMeta,
+  bothGuestGame, clearMeta, defaultMeta, loadLastMeta, loadMeta, saveLastMeta, saveMeta,
 } from "./state/meta";
 import type { GameMeta } from "./state/meta";
 import { devNearWin } from "./state/devFixtures";
@@ -70,7 +70,7 @@ export default function App() {
   const act = (action: GameAction) => {
     const next = gameReducer(game, action);
     if (next === game) return;
-    if (next && next.phase === "done" && game?.phase !== "done" && meta && !isGuestGame(meta)) {
+    if (next && next.phase === "done" && game?.phase !== "done" && meta && !bothGuestGame(meta)) {
       const gameKey = `${next.startedAt}:${next.history.length}`;
       if (recordedFor.current !== gameKey) {
         recordedFor.current = gameKey;

@@ -4,7 +4,7 @@ import {
   normalizeSettings, migrateRecords,
 } from "../../src/state/stats";
 import type { GameRecord, StatsExport } from "../../src/state/stats";
-import { isGuestGame, defaultMeta, GUEST } from "../../src/state/meta";
+import { isGuestGame, bothGuestGame, defaultMeta, GUEST } from "../../src/state/meta";
 import { newGame } from "../../src/engine/rules";
 
 const rec = (winnerName: string, loserName: string, over: Partial<GameRecord> = {}): GameRecord => ({
@@ -30,32 +30,56 @@ describe("recordFromGame", () => {
   });
 });
 
-describe("aggregates (by name)", () => {
+describe("aggregates (W/L standings)", () => {
   it("empty list", () => {
     expect(aggregates([])).toEqual({
-      games: 0, winsByName: {}, streak: null,
+      games: 0, standings: [], streak: null,
       avgMoves: null, avgDurationMs: null, avgMargin: null,
     });
   });
-  it("wins follow the person across side swaps; trailing streak by name", () => {
+  it("win/loss follow the person across side swaps; trailing streak by name", () => {
     const a = aggregates([
       rec("Paul", "Christina", { marginOfVictory: 5 }),
       rec("Christina", "Paul"),
       rec("Christina", "Paul", { moveCount: 80 }),
     ]);
     expect(a.games).toBe(3);
-    expect(a.winsByName).toEqual({ Paul: 1, Christina: 2 });
+    expect(a.standings).toEqual([
+      { name: "Christina", wins: 2, losses: 1 },
+      { name: "Paul", wins: 1, losses: 2 },
+    ]);
     expect(a.streak).toEqual({ name: "Christina", count: 2 });
     expect(a.avgMoves).toBeCloseTo((100 + 100 + 80) / 3);
     expect(a.avgMargin).toBeCloseTo((5 + 3 + 3) / 3);
   });
+  it("guest games count for the real player only; Guest never appears in standings", () => {
+    const a = aggregates([
+      rec("Paul", GUEST),        // Paul beat Guest -> Paul +win
+      rec(GUEST, "Paul"),        // Guest beat Paul -> Paul +loss, Guest gets nothing
+      rec("Christina", GUEST),   // Christina beat Guest -> Christina +win
+    ]);
+    expect(a.standings).toEqual([
+      { name: "Christina", wins: 1, losses: 0 },
+      { name: "Paul", wins: 1, losses: 1 },
+    ]);
+    expect(a.standings.some((s) => s.name === GUEST)).toBe(false);
+    // latest game's winner is real (Christina), so the streak is hers
+    expect(a.streak).toEqual({ name: "Christina", count: 1 });
+  });
+  it("no real-player streak when the latest game was won by Guest", () => {
+    const a = aggregates([rec("Paul", GUEST), rec(GUEST, "Paul")]);
+    expect(a.streak).toBeNull();
+  });
 });
 
-describe("guest games", () => {
-  it("isGuestGame detects Guest on either side; defaultMeta uses roster", () => {
+describe("guest predicates", () => {
+  it("isGuestGame = either side Guest; bothGuestGame = both sides Guest", () => {
     expect(isGuestGame({ ...META, players: [GUEST, "Paul"] })).toBe(true);
     expect(isGuestGame({ ...META, players: ["Paul", GUEST] })).toBe(true);
     expect(isGuestGame(META)).toBe(false);
+    expect(bothGuestGame({ ...META, players: [GUEST, GUEST] })).toBe(true);
+    expect(bothGuestGame({ ...META, players: [GUEST, "Paul"] })).toBe(false);
+    expect(bothGuestGame(META)).toBe(false);
     expect(defaultMeta(["A", "B"]).players).toEqual(["A", "B"]);
     expect(defaultMeta([]).players).toEqual(["Paul", "Christina"]);
   });
@@ -71,6 +95,11 @@ describe("normalizeSettings", () => {
   it("excludes Guest from a valid roster array", () => {
     expect(normalizeSettings({ roster: ["Paul", "Guest", "Christina"] })).toEqual({ roster: ["Paul", "Christina"] });
     expect(normalizeSettings({ roster: ["Paul", "Guest"] })).toEqual({ roster: ["Paul", "Christina"] });
+  });
+  it("drops legacy placeholder names so defaults win", () => {
+    expect(normalizeSettings({ p1Name: "Player 1", p2Name: "Player 2" })).toEqual({ roster: ["Paul", "Christina"] });
+    expect(normalizeSettings({ roster: ["Player 1", "Player 2"] })).toEqual({ roster: ["Paul", "Christina"] });
+    expect(normalizeSettings({ roster: ["Paul", "Player 1", "Christina"] })).toEqual({ roster: ["Paul", "Christina"] });
   });
 });
 

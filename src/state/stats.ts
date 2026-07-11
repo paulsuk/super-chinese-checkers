@@ -14,6 +14,11 @@ export interface GameRecord {
 export interface Settings { roster: string[]; }
 export interface StatsExport { settings: Settings; records: GameRecord[]; }
 
+// v1 placeholder names that carried no real identity — dropped so roster falls back to real defaults.
+const LEGACY_NAMES = ["Player 1", "Player 2"];
+const realNames = (names: string[]): string[] =>
+  names.filter((n) => n !== GUEST && !LEGACY_NAMES.includes(n));
+
 export function recordFromGame(state: GameState, meta: GameMeta, finishedAt: string): GameRecord {
   if (state.phase !== "done" || state.winner === null) throw new Error("game not finished");
   return {
@@ -26,9 +31,10 @@ export function recordFromGame(state: GameState, meta: GameMeta, finishedAt: str
   };
 }
 
+export interface Standing { name: string; wins: number; losses: number; }
 export interface Aggregates {
   games: number;
-  winsByName: Record<string, number>;
+  standings: Standing[];        // real players only (Guest never appears), best record first
   streak: { name: string; count: number } | null;
   avgMoves: number | null;
   avgDurationMs: number | null;
@@ -38,18 +44,31 @@ export interface Aggregates {
 export function aggregates(records: GameRecord[]): Aggregates {
   const games = records.length;
   if (games === 0) {
-    return { games: 0, winsByName: {}, streak: null, avgMoves: null, avgDurationMs: null, avgMargin: null };
+    return { games: 0, standings: [], streak: null, avgMoves: null, avgDurationMs: null, avgMargin: null };
   }
-  const winsByName: Record<string, number> = {};
-  for (const r of records) winsByName[r.winnerName] = (winsByName[r.winnerName] ?? 0) + 1;
+  // Guest is never a tracked competitor, but a real player's win or loss against Guest still counts.
+  const wins: Record<string, number> = {};
+  const losses: Record<string, number> = {};
+  for (const r of records) {
+    if (r.winnerName !== GUEST) wins[r.winnerName] = (wins[r.winnerName] ?? 0) + 1;
+    if (r.loserName !== GUEST) losses[r.loserName] = (losses[r.loserName] ?? 0) + 1;
+  }
+  const names = new Set([...Object.keys(wins), ...Object.keys(losses)]);
+  const standings: Standing[] = [...names]
+    .map((name) => ({ name, wins: wins[name] ?? 0, losses: losses[name] ?? 0 }))
+    .sort((a, b) => b.wins - a.wins || a.losses - b.losses || a.name.localeCompare(b.name));
   const last = records[games - 1]!;
-  let count = 0;
-  for (let i = games - 1; i >= 0 && records[i]!.winnerName === last.winnerName; i--) count++;
+  let streak: Aggregates["streak"] = null;
+  if (last.winnerName !== GUEST) {
+    let count = 0;
+    for (let i = games - 1; i >= 0 && records[i]!.winnerName === last.winnerName; i--) count++;
+    streak = { name: last.winnerName, count };
+  }
   const mean = (f: (r: GameRecord) => number) => records.reduce((s, r) => s + f(r), 0) / games;
   return {
     games,
-    winsByName,
-    streak: { name: last.winnerName, count },
+    standings,
+    streak,
     avgMoves: mean((r) => r.moveCount),
     avgDurationMs: mean((r) => r.durationMs),
     avgMargin: mean((r) => r.marginOfVictory),
@@ -75,12 +94,14 @@ export function normalizeSettings(raw: unknown): Settings {
   if (typeof raw === "object" && raw !== null) {
     const o = raw as Record<string, unknown>;
     if (Array.isArray(o.roster) && o.roster.length >= 2 && o.roster.every((n) => typeof n === "string")) {
-      const roster = (o.roster as string[]).filter((n) => n !== GUEST);
+      const roster = realNames(o.roster as string[]);
       if (roster.length >= 2) return { roster };
       return { roster: [...ROSTER_DEFAULTS] };
     }
     if (typeof o.p1Name === "string" && typeof o.p2Name === "string") {
-      return { roster: [o.p1Name, o.p2Name] };
+      const roster = realNames([o.p1Name, o.p2Name]);
+      if (roster.length >= 2) return { roster };
+      return { roster: [...ROSTER_DEFAULTS] };
     }
   }
   return { roster: [...ROSTER_DEFAULTS] };
@@ -120,7 +141,7 @@ export function parseImport(json: string): StatsExport | null {
     const settings = x.settings as Record<string, unknown> | undefined;
     if (!settings || !Array.isArray(settings.roster) || settings.roster.length < 2 ||
         !settings.roster.every((n) => typeof n === "string")) return null;
-    const roster = (settings.roster as string[]).filter((n) => n !== GUEST);
+    const roster = realNames(settings.roster as string[]);
     if (roster.length < 2) return null;
     if (!Array.isArray(x.records) || !x.records.every(isRecord)) return null;
     return { settings: { roster }, records: x.records };

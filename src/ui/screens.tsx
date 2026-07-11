@@ -3,7 +3,7 @@ import { marginSoFar } from "../engine/rules";
 import { aggregates, parseImport, serializeExport } from "../state/stats";
 import type { GameRecord, Settings, StatsExport } from "../state/stats";
 import { replaceAll } from "../state/persist";
-import { isGuestGame } from "../state/meta";
+import { bothGuestGame, isGuestGame } from "../state/meta";
 import type { GameMeta } from "../state/meta";
 import type { GameState } from "../engine/types";
 
@@ -50,20 +50,24 @@ export function StatsScreen({ records, roster, onBack }: {
   records: GameRecord[]; roster: string[]; onBack(): void;
 }) {
   const a = aggregates(records);
-  const entries = Object.entries(a.winsByName).sort((x, y) => y[1] - x[1]);
-  const top = entries[0] ?? [roster[0] ?? "Player 1", 0];
-  const second = entries[1] ?? [(roster.find((n) => n !== top[0]) ?? "Player 2"), 0];
+  const rows = a.standings.length > 0
+    ? a.standings
+    : roster.slice(0, 2).map((name) => ({ name, wins: 0, losses: 0 }));
   const min = (ms: number | null) => (ms === null ? "—" : `${Math.round(ms / 60000)} min`);
   const num = (n: number | null, d = 1) => (n === null ? "—" : n.toFixed(d));
   return (
     <Shell title="Stats" onBack={onBack}>
-      <div className="text-4xl font-bold">
-        {top[1]} <span className="text-neutral-400">—</span> {second[1]}
+      <div className="text-neutral-400">{a.games} games</div>
+      <div className="w-full max-w-sm">
+        {rows.map((s) => (
+          <div key={s.name} className="flex justify-between border-b border-neutral-800 py-2 text-lg">
+            <span>{s.name}</span>
+            <span className="tabular-nums">
+              {s.wins}<span className="text-neutral-500">–</span>{s.losses}
+            </span>
+          </div>
+        ))}
       </div>
-      <div className="text-neutral-400">{top[0]} vs {second[0]} · {a.games} games</div>
-      {entries.slice(2).map(([name, wins]) => (
-        <div key={name} className="text-sm text-neutral-400">{name}: {wins} wins</div>
-      ))}
       <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-lg">
         <span className="text-neutral-400">Streak</span>
         <span>{a.streak ? `${a.streak.name} × ${a.streak.count}` : "—"}</span>
@@ -154,9 +158,11 @@ export function WinOverlay({ game, meta, onNewGame, onMenu }: {
       <div className="text-xl text-neutral-300">
         Margin of victory: {marginSoFar(game)} · {game.history.length} moves
       </div>
-      {isGuestGame(meta) && (
+      {bothGuestGame(meta) ? (
         <div className="text-sm text-neutral-400">guest game — not recorded</div>
-      )}
+      ) : isGuestGame(meta) ? (
+        <div className="text-sm text-neutral-400">vs Guest — recorded for the other player</div>
+      ) : null}
       <Btn primary onClick={onNewGame}>New game</Btn>
       <Btn onClick={onMenu}>Menu</Btn>
     </div>
