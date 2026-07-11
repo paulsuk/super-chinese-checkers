@@ -1,7 +1,7 @@
 import { del, get, set } from "idb-keyval";
 import type { GameState } from "../engine/types";
+import { normalizeSettings } from "./stats";
 import type { GameRecord, Settings, StatsExport } from "./stats";
-import { PLAYER_DEFAULTS } from "../config/palette";
 
 const GAME = "game";
 const SETTINGS = "settings";
@@ -12,12 +12,14 @@ export const clearGame = (): Promise<void> => del(GAME);
 export const loadGame = (): Promise<GameState | undefined> => get<GameState>(GAME);
 
 export const saveSettings = (s: Settings): Promise<void> => set(SETTINGS, s);
-export const loadSettings = async (): Promise<Settings> =>
-  (await get<Settings>(SETTINGS)) ?? { p1Name: PLAYER_DEFAULTS[0], p2Name: PLAYER_DEFAULTS[1] };
+export const loadSettings = async (): Promise<Settings> => normalizeSettings(await get(SETTINGS));
 
-export const loadRecords = async (): Promise<GameRecord[]> => (await get<GameRecord[]>(STATS)) ?? [];
-export const appendRecord = async (r: GameRecord): Promise<void> =>
-  set(STATS, [...(await loadRecords()), r]);
+export const loadRecords = async (): Promise<unknown> => (await get(STATS)) ?? [];
+export const replaceRecords = (records: GameRecord[]): Promise<void> => set(STATS, records);
+export const appendRecord = async (r: GameRecord): Promise<void> => {
+  const current = await get<GameRecord[]>(STATS);
+  return set(STATS, [...(current ?? []), r]);
+};
 export const replaceAll = async (x: StatsExport): Promise<void> => {
   await set(STATS, x.records);
   await set(SETTINGS, x.settings);

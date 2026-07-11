@@ -22,7 +22,5 @@ export const DEFAULT_ASSIGNMENT: string[] = [
 
 export const TINT_ALPHA = 0.35; // target-triangle background tint
 
-export const PLAYER_DEFAULTS: [string, string] = ["Player 1", "Player 2"]; // removed in Task 2
-
 export const withAlpha = (hex: string, alpha: number): string =>
   hex + Math.round(alpha * 255).toString(16).padStart(2, "0");

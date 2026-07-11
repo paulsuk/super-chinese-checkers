@@ -1,21 +1,25 @@
 import { marginSoFar } from "../engine/rules";
-import type { GameState, PlayerId } from "../engine/types";
+import type { GameState } from "../engine/types";
+import { ROSTER_DEFAULTS } from "./meta";
+import type { GameMeta } from "./meta";
 
 export interface GameRecord {
   finishedAt: string;
-  winner: PlayerId;
+  winnerName: string;
+  loserName: string;
   moveCount: number;
   durationMs: number;
   marginOfVictory: number;
 }
-export interface Settings { p1Name: string; p2Name: string; }
+export interface Settings { roster: string[]; }
 export interface StatsExport { settings: Settings; records: GameRecord[]; }
 
-export function recordFromGame(state: GameState, finishedAt: string): GameRecord {
+export function recordFromGame(state: GameState, meta: GameMeta, finishedAt: string): GameRecord {
   if (state.phase !== "done" || state.winner === null) throw new Error("game not finished");
   return {
     finishedAt,
-    winner: state.winner,
+    winnerName: meta.players[state.winner],
+    loserName: meta.players[state.winner === 0 ? 1 : 0],
     moveCount: state.history.length,
     durationMs: Date.parse(finishedAt) - Date.parse(state.startedAt),
     marginOfVictory: marginSoFar(state)!,
@@ -24,8 +28,8 @@ export function recordFromGame(state: GameState, finishedAt: string): GameRecord
 
 export interface Aggregates {
   games: number;
-  wins: [number, number];
-  streak: { player: PlayerId; count: number } | null;
+  winsByName: Record<string, number>;
+  streak: { name: string; count: number } | null;
   avgMoves: number | null;
   avgDurationMs: number | null;
   avgMargin: number | null;
@@ -34,18 +38,18 @@ export interface Aggregates {
 export function aggregates(records: GameRecord[]): Aggregates {
   const games = records.length;
   if (games === 0) {
-    return { games: 0, wins: [0, 0], streak: null, avgMoves: null, avgDurationMs: null, avgMargin: null };
+    return { games: 0, winsByName: {}, streak: null, avgMoves: null, avgDurationMs: null, avgMargin: null };
   }
-  const wins: [number, number] = [0, 0];
-  for (const r of records) wins[r.winner]++;
+  const winsByName: Record<string, number> = {};
+  for (const r of records) winsByName[r.winnerName] = (winsByName[r.winnerName] ?? 0) + 1;
   const last = records[games - 1]!;
   let count = 0;
-  for (let i = games - 1; i >= 0 && records[i]!.winner === last.winner; i--) count++;
+  for (let i = games - 1; i >= 0 && records[i]!.winnerName === last.winnerName; i--) count++;
   const mean = (f: (r: GameRecord) => number) => records.reduce((s, r) => s + f(r), 0) / games;
   return {
     games,
-    wins,
-    streak: { player: last.winner, count },
+    winsByName,
+    streak: { name: last.winnerName, count },
     avgMoves: mean((r) => r.moveCount),
     avgDurationMs: mean((r) => r.durationMs),
     avgMargin: mean((r) => r.marginOfVictory),
@@ -59,20 +63,63 @@ function isRecord(r: unknown): r is GameRecord {
   const o = r as Record<string, unknown>;
   return (
     typeof o.finishedAt === "string" &&
-    (o.winner === 0 || o.winner === 1) &&
+    typeof o.winnerName === "string" &&
+    typeof o.loserName === "string" &&
     typeof o.moveCount === "number" &&
     typeof o.durationMs === "number" &&
     typeof o.marginOfVictory === "number"
   );
 }
 
+export function normalizeSettings(raw: unknown): Settings {
+  if (typeof raw === "object" && raw !== null) {
+    const o = raw as Record<string, unknown>;
+    if (Array.isArray(o.roster) && o.roster.length >= 2 && o.roster.every((n) => typeof n === "string")) {
+      return { roster: o.roster as string[] };
+    }
+    if (typeof o.p1Name === "string" && typeof o.p2Name === "string") {
+      return { roster: [o.p1Name, o.p2Name] };
+    }
+  }
+  return { roster: [...ROSTER_DEFAULTS] };
+}
+
+/** One-time load migration: legacy positional records -> name records via roster. */
+export function migrateRecords(raw: unknown, roster: string[]): { records: GameRecord[]; changed: boolean } {
+  if (!Array.isArray(raw)) return { records: [], changed: false };
+  let changed = false;
+  const records: GameRecord[] = [];
+  for (const item of raw) {
+    if (isRecord(item)) { records.push(item); continue; }
+    const o = (typeof item === "object" && item !== null ? item : {}) as Record<string, unknown>;
+    if (
+      (o.winner === 0 || o.winner === 1) &&
+      typeof o.finishedAt === "string" && typeof o.moveCount === "number" &&
+      typeof o.durationMs === "number" && typeof o.marginOfVictory === "number"
+    ) {
+      const w = o.winner as 0 | 1;
+      records.push({
+        finishedAt: o.finishedAt,
+        winnerName: roster[w] ?? `Player ${w + 1}`,
+        loserName: roster[1 - w] ?? `Player ${2 - w}`,
+        moveCount: o.moveCount,
+        durationMs: o.durationMs,
+        marginOfVictory: o.marginOfVictory,
+      });
+    }
+    changed = true; // migrated or dropped
+  }
+  return { records, changed };
+}
+
 export function parseImport(json: string): StatsExport | null {
   try {
     const x = JSON.parse(json) as Record<string, unknown>;
     const settings = x.settings as Record<string, unknown> | undefined;
-    if (!settings || typeof settings.p1Name !== "string" || typeof settings.p2Name !== "string") return null;
+    if (!settings || !Array.isArray(settings.roster) || settings.roster.length < 2 ||
+        !settings.roster.every((n) => typeof n === "string")) return null;
     if (!Array.isArray(x.records) || !x.records.every(isRecord)) return null;
-    return { settings: { p1Name: settings.p1Name, p2Name: settings.p2Name }, records: x.records };
+    return { settings: { roster: settings.roster as string[] }, records: x.records };
   } catch {
     return null;
   }
