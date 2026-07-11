@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gameReducer } from "./state/gameReducer";
 import type { GameAction } from "./state/gameReducer";
 import { recordFromGame } from "./state/stats";
@@ -27,6 +27,7 @@ export default function App() {
   const [records, setRecords] = useState<GameRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
   const view = useViewTransform();
+  const recordedFor = useRef<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -47,9 +48,13 @@ export default function App() {
     const next = gameReducer(game, action);
     if (next === game) return;
     if (next && next.phase === "done" && game?.phase !== "done") {
-      const rec = recordFromGame(next, new Date().toISOString());
-      setRecords((rs) => [...rs, rec]);
-      appendRecord(rec).catch(console.error);
+      const gameKey = `${next.startedAt}:${next.history.length}`;
+      if (recordedFor.current !== gameKey) {
+        recordedFor.current = gameKey;
+        const rec = recordFromGame(next, new Date().toISOString());
+        setRecords((rs) => [...rs, rec]);
+        appendRecord(rec).catch(console.error);
+      }
     }
     setGame(next);
   };
