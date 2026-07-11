@@ -17,11 +17,12 @@ import BoardView, { cellAt } from "./ui/BoardView";
 import GestureLayer from "./ui/GestureLayer";
 import Hud from "./ui/Hud";
 import { Menu, SettingsScreen, StatsScreen, WinOverlay } from "./ui/screens";
+import SetupScreen from "./ui/SetupScreen";
 import { useMoveInput } from "./ui/useMoveInput";
 import { useViewTransform } from "./ui/useViewTransform";
 import type { GameState } from "./engine/types";
 
-type Screen = "menu" | "game" | "stats" | "settings";
+type Screen = "menu" | "game" | "stats" | "settings" | "setup";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("menu");
@@ -95,7 +96,7 @@ export default function App() {
 
   const startNew = () => {
     if (game && game.phase !== "done" && !confirm("Abandon the current game?")) return;
-    beginGame(defaultMeta(settings.roster));
+    setScreen("setup");
   };
 
   const addPlayer = (name: string) => {
@@ -115,6 +116,17 @@ export default function App() {
         onAddPlayer={addPlayer}
         onImport={(x: StatsExport) => { setSettings(x.settings); setRecords(x.records); }}
         onBack={() => setScreen("menu")}
+      />
+    );
+  }
+  if (screen === "setup") {
+    return (
+      <SetupScreen
+        roster={settings.roster}
+        lastMeta={lastMeta}
+        onAddPlayer={addPlayer}
+        onStart={(m) => beginGame(m)}
+        onCancel={() => setScreen(game ? "game" : "menu")}
       />
     );
   }
