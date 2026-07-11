@@ -1,9 +1,12 @@
 import { useReducer } from "react";
 import { gameReducer } from "./state/gameReducer";
-import BoardView from "./ui/BoardView";
+import BoardView, { cellAt } from "./ui/BoardView";
+import GestureLayer from "./ui/GestureLayer";
+import { useViewTransform } from "./ui/useViewTransform";
 
 export default function App() {
   const [game, dispatch] = useReducer(gameReducer, null);
+  const view = useViewTransform();
   if (!game) {
     return (
       <div className="grid h-full place-items-center bg-neutral-900 text-neutral-100">
@@ -17,8 +20,16 @@ export default function App() {
     );
   }
   return (
-    <div className="h-full bg-neutral-900">
-      <BoardView pieces={game.pieces} staged={null} shake={null} transform="" />
+    <div className="relative h-full bg-neutral-900">
+      <GestureLayer view={view} onTap={(pt) => console.log("tap", cellAt(pt))}>
+        <BoardView pieces={game.pieces} staged={null} shake={null} transform={view.transform} />
+      </GestureLayer>
+      <button
+        className="absolute right-3 top-3 rounded-lg bg-neutral-700 px-3 py-2 text-neutral-100"
+        onClick={view.reset}
+      >
+        ⟲
+      </button>
     </div>
   );
 }
