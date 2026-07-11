@@ -11,9 +11,10 @@ interface Props {
   onCancel(): void;
   onUndo(): void;
   onResetView(): void;
+  onMenu(): void;
 }
 
-export default function Hud({ game, names, stagedReady, onLockIn, onCancel, onUndo, onResetView }: Props) {
+export default function Hud({ game, names, stagedReady, onLockIn, onCancel, onUndo, onResetView, onMenu }: Props) {
   const margin = marginSoFar(game);
   return (
     <>
@@ -30,6 +31,7 @@ export default function Hud({ game, names, stagedReady, onLockIn, onCancel, onUn
           )}
         </div>
         <div className="pointer-events-auto flex gap-2">
+          <button className="rounded-lg bg-neutral-700 px-3 py-2 text-neutral-100" onClick={onMenu}>Menu</button>
           <button className="rounded-lg bg-neutral-700 px-3 py-2 text-neutral-100" onClick={onUndo}>Undo</button>
           <button className="rounded-lg bg-neutral-700 px-3 py-2 text-neutral-100" onClick={onResetView}>⟲</button>
         </div>
