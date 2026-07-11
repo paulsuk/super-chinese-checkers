@@ -35,13 +35,15 @@ export default function Hud({ game, names, stagedReady, onLockIn, onCancel, onUn
         </div>
       </div>
       {stagedReady && (
-        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-3 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <button className="rounded-xl bg-emerald-600 px-8 py-3 text-lg text-white" onClick={onLockIn}>
-            Lock in
-          </button>
-          <button className="rounded-xl bg-neutral-700 px-6 py-3 text-lg text-neutral-100" onClick={onCancel}>
-            Cancel
-          </button>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center gap-3 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="pointer-events-auto flex gap-3">
+            <button className="rounded-xl bg-emerald-600 px-8 py-3 text-lg text-white" onClick={onLockIn}>
+              Lock in
+            </button>
+            <button className="rounded-xl bg-neutral-700 px-6 py-3 text-lg text-neutral-100" onClick={onCancel}>
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </>
