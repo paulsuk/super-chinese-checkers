@@ -15,7 +15,8 @@ color targets its opposite corner. One move per turn with any owned color. Per-c
 movement is forward + sideways only (never backward), enforced per hop. Symmetric "super"
 jumps (over a piece N away, land N beyond, gaps empty) with free chaining. Win = first
 player with all 30 pieces home; the loser then finishes out alone and the extra turns
-taken = margin of victory. App enforces rules but shows no hints. Full detail in the spec.
+taken = margin of victory. App enforces rules but shows no hints. Full detail in
+`work\archive\2026-07-10-super-chinese-checkers-design.md`.
 
 ## Conventions
 
