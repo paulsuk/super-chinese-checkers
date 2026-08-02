@@ -6,8 +6,10 @@ import { Avatar } from "./avatars";
 import BoardView, { cellAt } from "./BoardView";
 import GestureLayer from "./GestureLayer";
 import Hud from "./Hud";
+import SpeechBubble from "./SpeechBubble";
 import { WinOverlay } from "./screens";
 import { useBotTurn } from "./useBotTurn";
+import { useDialogue } from "./useDialogue";
 import { useMoveAnimation } from "./useMoveAnimation";
 import { useMoveInput } from "./useMoveInput";
 import type { useViewTransform } from "./useViewTransform";
@@ -31,6 +33,7 @@ export default function GameScreen({ game, meta, view, act, onMenu, onNewGame, o
   };
   const input = useMoveInput(game, commit);
   const { thinking } = useBotTurn({ game, profile, commit });
+  const line = useDialogue(game, profile);
   const botToMove = profile !== null && game.toMove === 0;
   const inFinishOut = game.phase === "finishOut";
   return (
@@ -57,6 +60,7 @@ export default function GameScreen({ game, meta, view, act, onMenu, onNewGame, o
         onResetView={view.reset}
         onMenu={onMenu}
       />
+      {profile && line && <SpeechBubble profile={profile} line={line} />}
       {profile && inFinishOut && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <button
