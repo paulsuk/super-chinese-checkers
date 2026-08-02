@@ -127,6 +127,19 @@ describe("export / import", () => {
     const x: StatsExport = { settings: { roster: ["Paul", "Christina", "Sam"] }, records: [rec("Sam", "Paul")] };
     expect(parseImport(serializeExport(x))).toEqual(x);
   });
+  it("round-trips botId: present stays present, absent stays absent", () => {
+    const x: StatsExport = {
+      settings: { roster: ["Paul", "Christina"] },
+      records: [
+        rec("Paul", "Lilibeth", { botId: "lilibeth" }),
+        rec("Paul", "Christina"),
+      ],
+    };
+    const out = parseImport(serializeExport(x));
+    expect(out).toEqual(x);
+    expect(out?.records[0]).toHaveProperty("botId", "lilibeth");
+    expect(out?.records[1]).not.toHaveProperty("botId");
+  });
   it("rejects malformed input", () => {
     expect(parseImport("not json")).toBeNull();
     expect(parseImport("{}")).toBeNull();
