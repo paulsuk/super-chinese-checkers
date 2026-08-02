@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  recordFromGame, aggregates, serializeExport, parseImport,
+  recordFromGame, aggregates, botAggregates, serializeExport, parseImport,
   normalizeSettings, migrateRecords,
 } from "../../src/state/stats";
 import type { GameRecord, StatsExport } from "../../src/state/stats";
@@ -133,5 +133,37 @@ describe("export / import", () => {
     expect(parseImport(JSON.stringify({ settings: { roster: "nope" }, records: [] }))).toBeNull();
     expect(parseImport(JSON.stringify({ settings: { roster: ["A", "B"] }, records: [{ winner: 0 }] }))).toBeNull();
     expect(parseImport(JSON.stringify({ settings: { roster: ["Guest", "Paul"] }, records: [] }))).toBeNull();
+  });
+});
+
+describe("bot game records", () => {
+  const rec = (winnerName: string, loserName: string, botId: string | undefined, margin = 3) => ({
+    finishedAt: "2026-08-01T00:00:00.000Z", winnerName, loserName,
+    moveCount: 60, durationMs: 600000, marginOfVictory: margin,
+    ...(botId ? { botId } : {}),
+  });
+
+  it("recordFromGame carries meta.botId", () => {
+    const state = { phase: "done", winner: 1, history: [{ color: 3, path: ["a", "b"] }],
+      pieces: {}, toMove: 1, winIndex: 0, startedAt: "2026-08-01T00:00:00.000Z" } as never;
+    const meta = { palette: [], players: ["Lilibeth", "Paul"], botId: "lilibeth" } as never;
+    expect(recordFromGame(state, meta, "2026-08-01T01:00:00.000Z").botId).toBe("lilibeth");
+  });
+
+  it("aggregates excludes bot games entirely", () => {
+    const a = aggregates([rec("Paul", "Christina", undefined), rec("Paul", "Lilibeth", "lilibeth")]);
+    expect(a.games).toBe(1);
+    expect(a.standings.map((s) => s.name)).toEqual(["Paul", "Christina"]);
+  });
+
+  it("botAggregates groups per player and bot with best margin", () => {
+    const rows = botAggregates([
+      rec("Paul", "Mia", "mia", 4), rec("Mia", "Paul", "mia"), rec("Paul", "Mia", "mia", 9),
+      rec("June-y", "Christina", "june"),
+    ]);
+    expect(rows).toContainEqual(
+      { playerName: "Paul", botId: "mia", wins: 2, losses: 1, bestMargin: 9 });
+    expect(rows).toContainEqual(
+      { playerName: "Christina", botId: "june", wins: 0, losses: 1, bestMargin: null });
   });
 });

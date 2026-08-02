@@ -1,5 +1,6 @@
 import { marginSoFar } from "../engine/rules";
 import type { GameState } from "../engine/types";
+import { BOTS, botById } from "../bots/profiles";
 import { GUEST, ROSTER_DEFAULTS } from "./meta";
 import type { GameMeta } from "./meta";
 
@@ -10,6 +11,7 @@ export interface GameRecord {
   moveCount: number;
   durationMs: number;
   marginOfVictory: number;
+  botId?: string;
 }
 export interface Settings { roster: string[]; }
 export interface StatsExport { settings: Settings; records: GameRecord[]; }
@@ -28,6 +30,7 @@ export function recordFromGame(state: GameState, meta: GameMeta, finishedAt: str
     moveCount: state.history.length,
     durationMs: Date.parse(finishedAt) - Date.parse(state.startedAt),
     marginOfVictory: marginSoFar(state)!,
+    ...(meta.botId ? { botId: meta.botId } : {}),
   };
 }
 
@@ -42,14 +45,15 @@ export interface Aggregates {
 }
 
 export function aggregates(records: GameRecord[]): Aggregates {
-  const games = records.length;
+  const pvp = records.filter((r) => !r.botId);
+  const games = pvp.length;
   if (games === 0) {
     return { games: 0, standings: [], streak: null, avgMoves: null, avgDurationMs: null, avgMargin: null };
   }
   // Guest is never a tracked competitor, but a real player's win or loss against Guest still counts.
   const wins: Record<string, number> = {};
   const losses: Record<string, number> = {};
-  for (const r of records) {
+  for (const r of pvp) {
     if (r.winnerName !== GUEST) wins[r.winnerName] = (wins[r.winnerName] ?? 0) + 1;
     if (r.loserName !== GUEST) losses[r.loserName] = (losses[r.loserName] ?? 0) + 1;
   }
@@ -57,14 +61,14 @@ export function aggregates(records: GameRecord[]): Aggregates {
   const standings: Standing[] = [...names]
     .map((name) => ({ name, wins: wins[name] ?? 0, losses: losses[name] ?? 0 }))
     .sort((a, b) => b.wins - a.wins || a.losses - b.losses || a.name.localeCompare(b.name));
-  const last = records[games - 1]!;
+  const last = pvp[games - 1]!;
   let streak: Aggregates["streak"] = null;
   if (last.winnerName !== GUEST) {
     let count = 0;
-    for (let i = games - 1; i >= 0 && records[i]!.winnerName === last.winnerName; i--) count++;
+    for (let i = games - 1; i >= 0 && pvp[i]!.winnerName === last.winnerName; i--) count++;
     streak = { name: last.winnerName, count };
   }
-  const mean = (f: (r: GameRecord) => number) => records.reduce((s, r) => s + f(r), 0) / games;
+  const mean = (f: (r: GameRecord) => number) => pvp.reduce((s, r) => s + f(r), 0) / games;
   return {
     games,
     standings,
@@ -73,6 +77,32 @@ export function aggregates(records: GameRecord[]): Aggregates {
     avgDurationMs: mean((r) => r.durationMs),
     avgMargin: mean((r) => r.marginOfVictory),
   };
+}
+
+export interface BotStanding {
+  playerName: string; botId: string; wins: number; losses: number; bestMargin: number | null;
+}
+
+export function botAggregates(records: GameRecord[]): BotStanding[] {
+  const map = new Map<string, BotStanding>();
+  for (const r of records) {
+    if (!r.botId) continue;
+    const botName = botById(r.botId)?.name ?? r.botId;
+    const humanWon = r.winnerName !== botName;
+    const playerName = humanWon ? r.winnerName : r.loserName;
+    const key = `${playerName}\u0000${r.botId}`;
+    const row = map.get(key) ?? { playerName, botId: r.botId, wins: 0, losses: 0, bestMargin: null };
+    if (humanWon) {
+      row.wins++;
+      row.bestMargin = Math.max(row.bestMargin ?? -Infinity, r.marginOfVictory);
+    } else row.losses++;
+    map.set(key, row);
+  }
+  const order = new Map(BOTS.map((b, i) => [b.id, i]));
+  return [...map.values()].sort(
+    (a, b) => a.playerName.localeCompare(b.playerName) ||
+      (order.get(a.botId) ?? 99) - (order.get(b.botId) ?? 99),
+  );
 }
 
 export const serializeExport = (x: StatsExport): string => JSON.stringify(x, null, 2);
@@ -86,7 +116,8 @@ function isRecord(r: unknown): r is GameRecord {
     typeof o.loserName === "string" &&
     typeof o.moveCount === "number" &&
     typeof o.durationMs === "number" &&
-    typeof o.marginOfVictory === "number"
+    typeof o.marginOfVictory === "number" &&
+    (o.botId === undefined || typeof o.botId === "string")
   );
 }
 

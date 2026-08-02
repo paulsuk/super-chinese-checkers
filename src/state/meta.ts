@@ -7,6 +7,7 @@ export const ROSTER_DEFAULTS: string[] = ["Paul", "Christina"];
 export interface GameMeta {
   palette: string[];         // length 6 — hex per ColorId (0-2 top, 3-5 bottom)
   players: [string, string]; // [topName, bottomName] for this game
+  botId?: string;
 }
 
 const META = "meta";
@@ -23,6 +24,10 @@ export const isGuestGame = (m: GameMeta): boolean =>
 
 export const bothGuestGame = (m: GameMeta): boolean =>
   m.players[0] === GUEST && m.players[1] === GUEST;
+
+/** Whether finishing this game should write a stats record. */
+export const recordable = (m: GameMeta): boolean =>
+  m.botId ? m.players[1] !== GUEST : !bothGuestGame(m);
 
 export const defaultMeta = (roster: string[]): GameMeta => ({
   palette: [...DEFAULT_ASSIGNMENT],
