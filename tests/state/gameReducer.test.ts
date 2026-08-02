@@ -4,7 +4,8 @@ import { newGame, applyMove } from "../../src/engine/rules";
 import { chooseMove } from "../../src/bots/chooseMove";
 import { forwardValue } from "../../src/bots/evaluate";
 import { AUTOPILOT_BRAIN } from "../../src/bots/profiles";
-import { COLORS_OF_PLAYER, startCells, targetCells } from "../../src/engine/board";
+import { COLORS_OF_PLAYER, legalDirs, targetCells } from "../../src/engine/board";
+import { add, cellId, parseId, scale } from "../../src/engine/coords";
 import type { CellId, ColorId, GameState } from "../../src/engine/types";
 
 const T0 = "2026-07-10T00:00:00Z";
@@ -52,18 +53,22 @@ describe("UNDO pair", () => {
 });
 
 describe("AUTO_FINISH", () => {
-  // Player 0 fully home; player 1 (the loser) has one piece per color still traveling.
-  // The empty target cell must be the SHALLOWEST (corner mouth) so a greedy forward
-  // walk can finish with a plain step — leaving the deep tip empty could require a
-  // precise hop and let a deterministic argmax cycle.
+  // Player 0 fully home; player 1 (the loser) has 9 of each color home and one
+  // traveler parked two forward-steps shy of the empty mouth cell (mid-board).
   function nearDoneLoser(): GameState {
     const pieces: Record<CellId, ColorId> = {};
-    for (const c of COLORS_OF_PLAYER[0]!) for (const id of targetCells(c as ColorId)) pieces[id] = c as ColorId;
-    for (const c of COLORS_OF_PLAYER[1]!) {
-      const targets = [...targetCells(c as ColorId)]
-        .sort((a, b) => forwardValue(c as ColorId, a) - forwardValue(c as ColorId, b));
-      for (const id of targets.slice(1)) pieces[id] = c as ColorId; // mouth cell stays empty
-      pieces[[...startCells(c as ColorId)][0]!] = c as ColorId;
+    for (const c of COLORS_OF_PLAYER[0]!) {
+      for (const id of targetCells(c as ColorId)) pieces[id] = c as ColorId;
+    }
+    for (const c of COLORS_OF_PLAYER[1]! as ColorId[]) {
+      const targets = [...targetCells(c)].sort((a, b) => forwardValue(c, a) - forwardValue(c, b));
+      const mouth = targets[0]!;
+      for (const id of targets.slice(1)) pieces[id] = c;
+      // forwardValue on a direction returns the axis dot product (value at cell from origin)
+      const dir = [...legalDirs(c)].reduce((best, d) =>
+        forwardValue(c, cellId(d)) > forwardValue(c, cellId(best)) ? d : best);
+      const spot = cellId(add(parseId(mouth), scale(dir, -2)));
+      pieces[spot] = c;
     }
     return {
       pieces, toMove: 1, phase: "finishOut", winner: 0, winIndex: 0,
@@ -72,6 +77,7 @@ describe("AUTO_FINISH", () => {
   }
   it("plays the loser out to done deterministically", () => {
     const s = nearDoneLoser();
+    expect(Object.keys(s.pieces)).toHaveLength(60);
     const a = gameReducer(s, { type: "AUTO_FINISH" })!;
     const b = gameReducer(s, { type: "AUTO_FINISH" })!;
     expect(a.phase).toBe("done");
