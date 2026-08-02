@@ -4,11 +4,13 @@ import {
 } from "../../src/bots/dialogue";
 import { targetCells } from "../../src/engine/board";
 import { newGame } from "../../src/engine/rules";
-import type { GameState } from "../../src/engine/types";
+import type { ColorId, GameState } from "../../src/engine/types";
 import type { LinePools } from "../../src/bots/types";
 import { mulberry32 } from "../helpers/rng";
 
 const g = (over: Partial<GameState>): GameState => ({ ...newGame("2026-01-01T00:00:00.000Z"), ...over });
+
+const HOME_COLORS: readonly ColorId[] = [3, 4, 5];
 
 describe("detectEvents", () => {
   it("classifies a 3-hop chain by mover", () => {
@@ -31,7 +33,7 @@ describe("detectEvents", () => {
 
   it("fires closingIn when home count crosses 25", () => {
     const homes = [...targetCells(3), ...targetCells(4), ...targetCells(5)];
-    const at = (n: number) => Object.fromEntries(homes.slice(0, n).map((id, i) => [id, [3, 4, 5][Math.floor(i / 10)]]));
+    const at = (n: number) => Object.fromEntries(homes.slice(0, n).map((id, i) => [id, HOME_COLORS[Math.floor(i / 10)]!]));
     const prev = g({ pieces: at(24) });
     const next = g({ pieces: at(25), history: [{ color: 4, path: ["a", "b"] }] });
     expect(homeCount(next.pieces, 1)).toBe(25);
