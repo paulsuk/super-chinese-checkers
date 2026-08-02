@@ -12,13 +12,10 @@ import {
 } from "./state/meta";
 import type { GameMeta } from "./state/meta";
 import { devNearWin } from "./state/devFixtures";
-import BoardView, { cellAt } from "./ui/BoardView";
 import BotPicker from "./ui/BotPicker";
-import GestureLayer from "./ui/GestureLayer";
-import Hud from "./ui/Hud";
-import { Menu, SettingsScreen, StatsScreen, WinOverlay } from "./ui/screens";
+import GameScreen from "./ui/GameScreen";
+import { Menu, SettingsScreen, StatsScreen } from "./ui/screens";
 import SetupScreen from "./ui/SetupScreen";
-import { useMoveInput } from "./ui/useMoveInput";
 import { useViewTransform } from "./ui/useViewTransform";
 import type { GameState } from "./engine/types";
 
@@ -82,10 +79,8 @@ export default function App() {
     }
     setGame(next);
   };
-  const input = useMoveInput(game, (move) => act({ type: "COMMIT_MOVE", move }));
 
   const beginGame = (m: GameMeta, state?: GameState) => {
-    input.cancel();
     setMeta(m);
     const writes: Promise<void>[] = [saveMeta(m)];
     if (!m.botId) {
@@ -149,31 +144,12 @@ export default function App() {
   }
   if (screen === "game" && game && meta) {
     return (
-      <div className="relative h-full bg-neutral-900">
-        <GestureLayer view={view} onTap={(pt) => input.tap(cellAt(pt))}>
-          <BoardView
-            pieces={game.pieces} staged={input.staged}
-            shake={input.shake} transform={view.transform}
-            palette={meta.palette}
-          />
-        </GestureLayer>
-        <Hud
-          game={game} names={meta.players} palette={meta.palette}
-          stagedReady={!!input.staged && input.staged.path.length >= 2}
-          onLockIn={input.lockIn}
-          onCancel={() => input.cancel()}
-          onUndo={() => { input.cancel(); act({ type: "UNDO" }); }}
-          onResetView={view.reset}
-          onMenu={() => setScreen("menu")}
-        />
-        {game.phase === "done" && (
-          <WinOverlay
-            game={game} meta={meta}
-            onNewGame={startNew}
-            onMenu={() => { setGame(null); setMeta(null); setScreen("menu"); }}
-          />
-        )}
-      </div>
+      <GameScreen
+        game={game} meta={meta} view={view} act={act}
+        onMenu={() => setScreen("menu")}
+        onNewGame={startNew}
+        onExitToMenu={() => { setGame(null); setMeta(null); setScreen("menu"); }}
+      />
     );
   }
   return (
