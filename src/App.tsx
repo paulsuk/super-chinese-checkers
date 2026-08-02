@@ -13,6 +13,7 @@ import {
 import type { GameMeta } from "./state/meta";
 import { devNearWin } from "./state/devFixtures";
 import BoardView, { cellAt } from "./ui/BoardView";
+import BotPicker from "./ui/BotPicker";
 import GestureLayer from "./ui/GestureLayer";
 import Hud from "./ui/Hud";
 import { Menu, SettingsScreen, StatsScreen, WinOverlay } from "./ui/screens";
@@ -21,7 +22,7 @@ import { useMoveInput } from "./ui/useMoveInput";
 import { useViewTransform } from "./ui/useViewTransform";
 import type { GameState } from "./engine/types";
 
-type Screen = "menu" | "game" | "stats" | "settings" | "setup";
+type Screen = "menu" | "game" | "stats" | "settings" | "setup" | "botPicker";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("menu");
@@ -86,8 +87,12 @@ export default function App() {
   const beginGame = (m: GameMeta, state?: GameState) => {
     input.cancel();
     setMeta(m);
-    setLastMeta(m);
-    Promise.all([saveMeta(m), saveLastMeta(m)]).catch(console.error);
+    const writes: Promise<void>[] = [saveMeta(m)];
+    if (!m.botId) {
+      setLastMeta(m);
+      writes.push(saveLastMeta(m));
+    }
+    Promise.all(writes).catch(console.error);
     if (state) setGame(state);
     else act({ type: "NEW_GAME", startedAt: new Date().toISOString() });
     setScreen("game");
@@ -96,6 +101,11 @@ export default function App() {
   const startNew = () => {
     if (game && game.phase !== "done" && !confirm("Abandon the current game?")) return;
     setScreen("setup");
+  };
+
+  const startBots = () => {
+    if (game && game.phase !== "done" && !confirm("Abandon the current game?")) return;
+    setScreen("botPicker");
   };
 
   const addPlayer = (name: string) => {
@@ -115,6 +125,14 @@ export default function App() {
         onAddPlayer={addPlayer}
         onImport={(x: StatsExport) => { setSettings(x.settings); setRecords(x.records); }}
         onBack={() => setScreen("menu")}
+      />
+    );
+  }
+  if (screen === "botPicker") {
+    return (
+      <BotPicker
+        roster={settings.roster} lastMeta={lastMeta}
+        onStart={(m) => beginGame(m)} onCancel={() => setScreen("menu")}
       />
     );
   }
@@ -163,6 +181,7 @@ export default function App() {
       hasGame={!!game}
       onContinue={() => setScreen("game")}
       onNew={startNew}
+      onBots={startBots}
       onStats={() => setScreen("stats")}
       onSettings={() => setScreen("settings")}
       onDevNearWin={

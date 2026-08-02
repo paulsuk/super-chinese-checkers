@@ -31,7 +31,7 @@ const Shell = ({ title, onBack, children }: {
 );
 
 export function Menu(p: {
-  hasGame: boolean; onContinue(): void; onNew(): void; onStats(): void;
+  hasGame: boolean; onContinue(): void; onNew(): void; onBots(): void; onStats(): void;
   onSettings(): void; onDevNearWin?: () => void;
 }) {
   return (
@@ -39,6 +39,7 @@ export function Menu(p: {
       <h1 className="mb-4 text-3xl font-semibold">Super Chinese Checkers</h1>
       {p.hasGame && <Btn primary onClick={p.onContinue}>Continue</Btn>}
       <Btn primary={!p.hasGame} onClick={p.onNew}>New game</Btn>
+      <Btn onClick={p.onBots}>Play the bettybots</Btn>
       <Btn onClick={p.onStats}>Stats</Btn>
       <Btn onClick={p.onSettings}>Settings</Btn>
       {p.onDevNearWin && <Btn onClick={p.onDevNearWin}>Near-win (dev)</Btn>}
