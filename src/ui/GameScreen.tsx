@@ -58,9 +58,9 @@ export default function GameScreen({ game, meta, view, act, onMenu, onNewGame, o
         onMenu={onMenu}
       />
       {profile && inFinishOut && (
-        <div className="absolute inset-x-0 bottom-0 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <button
-            className="rounded-xl bg-neutral-700 px-6 py-3 text-lg text-neutral-100"
+            className="pointer-events-auto rounded-xl bg-neutral-700 px-6 py-3 text-lg text-neutral-100"
             onClick={() => act({ type: "AUTO_FINISH" })}
           >
             {game.winner === 1 ? "Skip" : "Auto-finish"}
