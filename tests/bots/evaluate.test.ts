@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { forwardValue, homeRank, progressOf, scoreMove } from "../../src/bots/evaluate";
-import { targetCells } from "../../src/engine/board";
+import { forwardValue, homeRank, progressOf, scoreMove, strayDepth } from "../../src/bots/evaluate";
+import { cornerCells, targetCells } from "../../src/engine/board";
 import type { Pieces } from "../../src/engine/rules";
 import type { Weights } from "../../src/bots/types";
 
@@ -28,6 +28,25 @@ describe("homeRank", () => {
   });
 });
 
+describe("strayDepth", () => {
+  // color 1 = N corner, target S.
+  it("is 0 in the open middle and everywhere in the color's own target corner", () => {
+    expect(strayDepth(1, "0,0")).toBe(0);
+    for (const id of targetCells(1)) expect(strayDepth(1, id)).toBe(0);
+  });
+  it("counts rows into any other corner, the color's own start corner included", () => {
+    expect(strayDepth(1, "4,-8")).toBe(4); // N tip — where color 1 started
+    expect(strayDepth(1, "4,-7")).toBe(3);
+    expect(strayDepth(1, "4,-6")).toBe(2);
+    expect(strayDepth(1, "4,-5")).toBe(1); // N mouth row
+    expect(strayDepth(1, "8,-4")).toBe(4); // NE tip — a corner color 1 has no business in
+  });
+  it("ranks a whole foreign corner as four mouth cells down to a single tip", () => {
+    const depths = [...cornerCells("N")].map((id) => strayDepth(1, id)).sort((a, b) => a - b);
+    expect(depths).toEqual([1, 1, 1, 1, 2, 2, 2, 3, 3, 4]);
+  });
+});
+
 describe("scoreMove", () => {
   it("with forward-only weights, score equals progress", () => {
     const pieces: Pieces = { "0,0": 1 };
@@ -46,6 +65,16 @@ describe("scoreMove", () => {
     expect(rear).toBeGreaterThan(front);
     // sideways move earns no straggler bonus even for the rearmost piece
     expect(scoreMove(pieces, { color: 1, path: ["0,0", "1,0"] }, w)).toBe(0);
+  });
+  it("stray charges for burying a piece deeper in a dead-end corner and pays to dig it out", () => {
+    const w: Weights = { ...W0, forward: 0, stray: 2 };
+    const pieces: Pieces = { "4,-7": 1 }; // color 1, depth 3 in its own start corner
+    expect(scoreMove(pieces, { color: 1, path: ["4,-7", "4,-8"] }, w)).toBe(-2); // to the tip
+    expect(scoreMove(pieces, { color: 1, path: ["4,-7", "4,-6"] }, w)).toBe(2); // toward the mouth
+  });
+  it("stray is inert when the weight is omitted", () => {
+    const w: Weights = { ...W0, forward: 0 };
+    expect(scoreMove({ "4,-7": 1 }, { color: 1, path: ["4,-7", "4,-8"] }, w)).toBe(0);
   });
   it("homeFill rewards entering deep home cells and charges for leaving them", () => {
     const w: Weights = { ...W0, forward: 0, homeFill: 1 };

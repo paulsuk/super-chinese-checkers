@@ -5,7 +5,7 @@ export const isCheer = (l: Line): boolean => typeof l !== "string" && l.cheer ==
 
 /** Deterministic textbook brain used by AUTO_FINISH (both bot skip and human auto-finish). */
 export const AUTOPILOT_BRAIN: BrainConfig = {
-  weights: { forward: 1, straggler: 0.8, homeFill: 1.2, chain: 0, gift: 0 },
+  weights: { forward: 1, straggler: 0.8, homeFill: 1.2, chain: 0, gift: 0, stray: 8, revisit: 0.5 },
   temperature: 0,
   topK: 1,
   replyCheck: false,
@@ -21,9 +21,12 @@ export const BOTS: readonly BotProfile[] = [
     palette: ["#f472b6", "#22d3ee", "#fb923c"],
     think: { minMs: 400, maxMs: 900 },
     brain: {
-      weights: { forward: 1, straggler: 0, homeFill: 0.5, chain: 3, gift: 0 },
-      temperature: 3,
-      topK: 12,
+      // Sloppy on purpose: chain-obsessed, careless about filling home, and hot enough
+      // to pick near-randomly. `stray`/`straggler` stay high anyway — those are what keep
+      // a game finishing at all, and at this temperature they need a wide score gap to survive.
+      weights: { forward: 1, straggler: 1.2, homeFill: 0.5, chain: 3, gift: 0, stray: 12 },
+      temperature: 6,
+      topK: 16,
       replyCheck: false,
     },
     lines: {
@@ -66,7 +69,7 @@ export const BOTS: readonly BotProfile[] = [
     palette: ["#facc15", "#84cc16", "#f59e0b"],
     think: { minMs: 800, maxMs: 1500 },
     brain: {
-      weights: { forward: 1, straggler: 0.6, homeFill: 1, chain: 0.3, gift: 0 },
+      weights: { forward: 1, straggler: 1.2, homeFill: 1, chain: 0.3, gift: 0, stray: 8 },
       temperature: 0.3,
       topK: 4,
       replyCheck: false,
@@ -111,8 +114,8 @@ export const BOTS: readonly BotProfile[] = [
     palette: ["#e11d9b", "#a21caf", "#f0abfc"],
     think: { minMs: 900, maxMs: 1700 },
     brain: {
-      weights: { forward: 1, straggler: 0.6, homeFill: 1, chain: 0.5, gift: 1 },
-      temperature: 0.15,
+      weights: { forward: 1, straggler: 1.2, homeFill: 2, chain: 0.5, gift: 1, stray: 10 },
+      temperature: 0.1,
       topK: 6,
       replyCheck: true,
     },

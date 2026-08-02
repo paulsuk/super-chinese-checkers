@@ -4,6 +4,19 @@ export interface Weights {
   homeFill: number;  // per rank of net home-cell improvement (deepest rank = 10)
   chain: number;     // per hop beyond the first
   gift: number;      // penalty per step unit of opponent best-reply improvement
+  /**
+   * Per row of net depth gained inside a corner that is not this color's target
+   * (see `strayDepth`). Optional; omit or 0 to disable. Negative score for moves
+   * that bury a piece in a dead-end corner, positive for moves that dig one out.
+   */
+  stray?: number;
+  /**
+   * Flat penalty for landing a piece back on a cell its own color vacated in the
+   * recent past. Optional; omit or 0 to disable. Only a deterministic brain
+   * (temperature 0) really needs it: on a plateau every candidate can score
+   * exactly 0, and an argmax then repeats the same cycle forever.
+   */
+  revisit?: number;
 }
 
 export interface BrainConfig {
