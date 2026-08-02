@@ -51,9 +51,10 @@ interface Props {
   shake: CellId | null;
   transform: string;
   palette: string[];
+  override?: { id: CellId; x: number; y: number } | null;
 }
 
-export default function BoardView({ pieces, staged, shake, transform, palette }: Props) {
+export default function BoardView({ pieces, staged, shake, transform, palette, override = null }: Props) {
   const origin = staged?.path[0] ?? null;
   const end = staged && staged.path.length > 1 ? staged.path[staged.path.length - 1]! : null;
   return (
@@ -70,11 +71,11 @@ export default function BoardView({ pieces, staged, shake, transform, palette }:
           <circle key={id} cx={x} cy={y} r={7} fill="#3f3f46" />
         ))}
         {Object.entries(pieces).map(([id, color]) => {
-          const { x, y } = PIXELS.get(id)!;
+          const pos = override && override.id === id ? override : PIXELS.get(id)!;
           const dimmed = end !== null && id === origin;
           return (
             <circle
-              key={`p${id}`} cx={x} cy={y} r={13}
+              key={`p${id}`} cx={pos.x} cy={pos.y} r={13}
               fill={palette[color]!} stroke="#00000055" strokeWidth={2}
               opacity={dimmed ? 0.35 : 1}
               className={shake === id ? "shake" : undefined}
