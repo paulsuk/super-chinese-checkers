@@ -1,11 +1,6 @@
 export default function June({ size = 48 }: { size?: number }) {
   return (
     <svg viewBox="0 0 100 100" width={size} height={size}>
-      <defs>
-        <clipPath id="june-pineapple-clip">
-          <ellipse cx={50} cy={82} rx={19} ry={15} />
-        </clipPath>
-      </defs>
       {/* pointed ears, behind the fluff */}
       <path d="M22,26 L18,10 L34,26 Z" fill="#d99a2f" />
       <path d="M78,26 L82,10 L66,26 Z" fill="#d99a2f" />
@@ -37,16 +32,16 @@ export default function June({ size = 48 }: { size?: number }) {
       <line x1={44} y1={59} x2={56} y2={59} stroke="#3f3f46" strokeWidth={2} strokeLinecap="round" />
       {/* pineapple body */}
       <ellipse cx={50} cy={82} rx={19} ry={15} fill="#facc15" />
-      <g clipPath="url(#june-pineapple-clip)">
-        <line x1={32} y1={95} x2={44} y2={67} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
-        <line x1={40} y1={95} x2={52} y2={67} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
-        <line x1={48} y1={95} x2={60} y2={67} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
-        <line x1={56} y1={95} x2={68} y2={67} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
-        <line x1={44} y1={95} x2={32} y2={67} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
-        <line x1={52} y1={95} x2={40} y2={67} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
-        <line x1={60} y1={95} x2={48} y2={67} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
-        <line x1={68} y1={95} x2={56} y2={67} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
-      </g>
+      {/* crosshatch: endpoints hand-trimmed to sit inside the ellipse outline (no clipPath,
+          so no id — this SVG can render many times at once without id collisions) */}
+      <line x1={34.3} y1={89.7} x2={43.4} y2={68.4} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
+      <line x1={40.6} y1={93.6} x2={51.4} y2={68.4} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
+      <line x1={48} y1={95} x2={58.8} y2={69.8} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
+      <line x1={56} y1={95} x2={64.9} y2={74.3} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
+      <line x1={65.7} y1={89.7} x2={56.6} y2={68.4} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
+      <line x1={59.4} y1={93.6} x2={48.6} y2={68.4} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
+      <line x1={52} y1={95} x2={41.2} y2={69.8} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
+      <line x1={44} y1={95} x2={35.1} y2={74.3} stroke="#ca8a04" strokeWidth={1.2} opacity={0.55} />
       <ellipse cx={50} cy={82} rx={19} ry={15} fill="none" stroke="#ca8a04" strokeWidth={2} />
     </svg>
   );
