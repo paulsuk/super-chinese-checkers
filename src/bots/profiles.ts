@@ -27,9 +27,13 @@ export const BOTS: readonly BotProfile[] = [
       // Sloppy on purpose: chain-obsessed, careless about filling home, and hot enough
       // to pick near-randomly. `stray`/`straggler` stay high anyway — those are what keep
       // a game finishing at all, and at this temperature they need a wide score gap to survive.
-      weights: { forward: 1, straggler: 1.2, homeFill: 0.5, chain: 3, gift: 0, stray: 12 },
+      // Nerf 2026-08-02: quality weights halved (forward/homeFill/chain) so she picks
+      // worse directions, but the safety terms (stray, straggler) keep their full
+      // temp-6 ratios — dropping those below ~exp(2) per depth brings back corner
+      // squatting and the no-legal-moves crash.
+      weights: { forward: 0.5, straggler: 1.2, homeFill: 0.25, chain: 1.5, gift: 0, stray: 12 },
       temperature: 6,
-      topK: 16,
+      topK: 22,
       replyCheck: false,
     },
     lines: {
