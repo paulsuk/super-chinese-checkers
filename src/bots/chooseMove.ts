@@ -8,7 +8,11 @@ import type { BrainConfig, Weights } from "./types";
 
 export type Rng = () => number;
 
-/** How many plies back the `revisit` penalty remembers vacated cells. */
+/**
+ * How many plies back the `revisit` penalty remembers vacated cells. Raw plies, so it spans
+ * about 8 of the brain's own moves during normal play but a full 16 during finishOut, where
+ * only the loser moves — which is the phase that needs it most.
+ */
 export const REVISIT_WINDOW = 16;
 
 const vacatedKey = (color: ColorId, cell: CellId): string => `${color}:${cell}`;

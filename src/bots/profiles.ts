@@ -5,7 +5,10 @@ export const isCheer = (l: Line): boolean => typeof l !== "string" && l.cheer ==
 
 /** Deterministic textbook brain used by AUTO_FINISH (both bot skip and human auto-finish). */
 export const AUTOPILOT_BRAIN: BrainConfig = {
-  weights: { forward: 1, straggler: 0.8, homeFill: 1.2, chain: 0, gift: 0, stray: 8, revisit: 0.5 },
+  // revisit must stay below this brain's smallest real score gap or it would demote a
+  // strictly better move. progress, lag, rank delta and stray depth are all integers, so
+  // the reachable scores are 1a + 0.8b + 1.2c + 8d — a lattice of spacing exactly 0.2.
+  weights: { forward: 1, straggler: 0.8, homeFill: 1.2, chain: 0, gift: 0, stray: 8, revisit: 0.1 },
   temperature: 0,
   topK: 1,
   replyCheck: false,

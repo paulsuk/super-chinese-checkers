@@ -15,6 +15,10 @@ export interface Weights {
    * recent past. Optional; omit or 0 to disable. Only a deterministic brain
    * (temperature 0) really needs it: on a plateau every candidate can score
    * exactly 0, and an argmax then repeats the same cycle forever.
+   *
+   * It is subtracted unconditionally, so size it BELOW the smallest gap the rest of
+   * the brain's weights can produce — otherwise it demotes moves that are genuinely
+   * better rather than only separating exact ties.
    */
   revisit?: number;
 }
