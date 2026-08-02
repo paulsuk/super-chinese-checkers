@@ -108,7 +108,7 @@ export const BOTS: readonly BotProfile[] = [
     tagline: "creator of the bettybots. big brain, bigger ego",
     difficulty: 3,
     avatar: "lilibeth",
-    palette: ["#a855f7", "#7c3aed", "#d8b4fe"],
+    palette: ["#d946ef", "#a21caf", "#f0abfc"],
     think: { minMs: 900, maxMs: 1700 },
     brain: {
       weights: { forward: 1, straggler: 0.6, homeFill: 1, chain: 0.5, gift: 1 },
