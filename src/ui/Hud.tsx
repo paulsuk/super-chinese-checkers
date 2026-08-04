@@ -7,6 +7,9 @@ interface Props {
   names: [string, string];
   stagedReady: boolean;
   palette: string[];
+  avatar?: React.ReactNode;
+  thinking?: boolean;
+  undoDisabled?: boolean;
   onLockIn(): void;
   onCancel(): void;
   onUndo(): void;
@@ -14,16 +17,25 @@ interface Props {
   onMenu(): void;
 }
 
-export default function Hud({ game, names, stagedReady, palette, onLockIn, onCancel, onUndo, onResetView, onMenu }: Props) {
+export default function Hud({
+  game, names, stagedReady, palette, avatar, thinking, undoDisabled,
+  onLockIn, onCancel, onUndo, onResetView, onMenu,
+}: Props) {
   const margin = marginSoFar(game);
   return (
     <>
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between p-3 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-2 rounded-xl bg-neutral-800/90 px-3 py-2 text-neutral-100">
+          {avatar}
           <span className="text-lg font-medium">{names[game.toMove]}</span>
           {COLORS_OF_PLAYER[game.toMove]!.map((c) => (
             <span key={c} className="inline-block h-4 w-4 rounded-full" style={{ background: palette[c] }} />
           ))}
+          {thinking && (
+            <span className="ml-1 flex gap-0.5 text-lg leading-none">
+              <span className="dot">.</span><span className="dot dot2">.</span><span className="dot dot3">.</span>
+            </span>
+          )}
           {game.phase === "finishOut" && (
             <span className="ml-2 rounded-md bg-amber-600 px-2 py-0.5 text-sm">
               {names[game.winner!]} wins — margin {margin}
@@ -32,7 +44,8 @@ export default function Hud({ game, names, stagedReady, palette, onLockIn, onCan
         </div>
         <div className="pointer-events-auto flex gap-2">
           <button className="rounded-lg bg-neutral-700 px-3 py-2 text-neutral-100" onClick={onMenu}>Menu</button>
-          <button className="rounded-lg bg-neutral-700 px-3 py-2 text-neutral-100" onClick={onUndo}>Undo</button>
+          <button className="rounded-lg bg-neutral-700 px-3 py-2 text-neutral-100 disabled:opacity-40"
+            disabled={undoDisabled} onClick={onUndo}>Undo</button>
           <button className="rounded-lg bg-neutral-700 px-3 py-2 text-neutral-100" onClick={onResetView}>⟲</button>
         </div>
       </div>

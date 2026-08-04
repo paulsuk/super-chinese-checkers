@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
 import { marginSoFar } from "../engine/rules";
-import { aggregates, parseImport, serializeExport } from "../state/stats";
+import { aggregates, botAggregates, parseImport, serializeExport } from "../state/stats";
 import type { GameRecord, Settings, StatsExport } from "../state/stats";
 import { replaceAll } from "../state/persist";
-import { bothGuestGame, isGuestGame } from "../state/meta";
+import { isGuestGame, recordable } from "../state/meta";
 import type { GameMeta } from "../state/meta";
 import type { GameState } from "../engine/types";
+import { Avatar } from "./avatars";
+import { BOTS, botById, botName } from "../bots/profiles";
 
 function Btn({ onClick, children, primary = false }: {
   onClick(): void; children: React.ReactNode; primary?: boolean;
@@ -31,7 +33,7 @@ const Shell = ({ title, onBack, children }: {
 );
 
 export function Menu(p: {
-  hasGame: boolean; onContinue(): void; onNew(): void; onStats(): void;
+  hasGame: boolean; onContinue(): void; onNew(): void; onBots(): void; onStats(): void;
   onSettings(): void; onDevNearWin?: () => void;
 }) {
   return (
@@ -39,6 +41,7 @@ export function Menu(p: {
       <h1 className="mb-4 text-3xl font-semibold">Super Chinese Checkers</h1>
       {p.hasGame && <Btn primary onClick={p.onContinue}>Continue</Btn>}
       <Btn primary={!p.hasGame} onClick={p.onNew}>New game</Btn>
+      <Btn onClick={p.onBots}>Play the bettybots</Btn>
       <Btn onClick={p.onStats}>Stats</Btn>
       <Btn onClick={p.onSettings}>Settings</Btn>
       {p.onDevNearWin && <Btn onClick={p.onDevNearWin}>Near-win (dev)</Btn>}
@@ -50,6 +53,7 @@ export function StatsScreen({ records, roster, onBack }: {
   records: GameRecord[]; roster: string[]; onBack(): void;
 }) {
   const a = aggregates(records);
+  const bots = botAggregates(records);
   const rows = a.standings.length > 0
     ? a.standings
     : roster.slice(0, 2).map((name) => ({ name, wins: 0, losses: 0 }));
@@ -75,14 +79,36 @@ export function StatsScreen({ records, roster, onBack }: {
         <span className="text-neutral-400">Avg moves</span><span>{num(a.avgMoves, 0)}</span>
         <span className="text-neutral-400">Avg length</span><span>{min(a.avgDurationMs)}</span>
       </div>
+      {/* recent list is PvP-only so it agrees with the game count and standings above;
+          bot results live in their own section below */}
       <div className="mt-4 w-full max-w-sm">
-        {records.slice(-10).reverse().map((r, i) => (
+        {records.filter((r) => !r.botId).slice(-10).reverse().map((r, i) => (
           <div key={`${r.finishedAt}-${i}`} className="flex justify-between border-b border-neutral-800 py-2 text-sm">
             <span>{r.winnerName} beat {r.loserName} by {r.marginOfVictory}</span>
             <span className="text-neutral-400">{r.moveCount} moves · {r.finishedAt.slice(0, 10)}</span>
           </div>
         ))}
       </div>
+      {bots.length > 0 && (
+        <div className="mt-4 w-full max-w-sm">
+          <div className="mb-1 text-neutral-400">vs the bettybots</div>
+          {bots.map((r) => (
+            <div key={`${r.playerName}-${r.botId}`}
+              className="flex items-center justify-between border-b border-neutral-800 py-2">
+              <span className="flex items-center gap-2">
+                <Avatar id={botById(r.botId)?.avatar ?? r.botId} size={24} />
+                {r.playerName} vs {botName(r.botId)}
+              </span>
+              <span className="tabular-nums">
+                {r.wins}<span className="text-neutral-500">–</span>{r.losses}
+                {r.bestMargin !== null && (
+                  <span className="ml-2 text-sm text-neutral-400">best {r.bestMargin}</span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </Shell>
   );
 }
@@ -94,7 +120,8 @@ export function SettingsScreen({ settings, records, onAddPlayer, onImport, onBac
   const fileRef = useRef<HTMLInputElement>(null);
   const [newName, setNewName] = useState("");
   const canAdd = newName.trim().length > 0 &&
-    newName.trim() !== "Guest" && !settings.roster.includes(newName.trim());
+    newName.trim() !== "Guest" && !settings.roster.includes(newName.trim()) &&
+    !BOTS.map((b) => b.name.toLowerCase()).includes(newName.trim().toLowerCase());
   const doExport = async () => {
     const json = serializeExport({ settings, records });
     const file = new File([json], `super-cc-stats-${new Date().toISOString().slice(0, 10)}.json`, {
@@ -158,8 +185,10 @@ export function WinOverlay({ game, meta, onNewGame, onMenu }: {
       <div className="text-xl text-neutral-300">
         Margin of victory: {marginSoFar(game)} · {game.history.length} moves
       </div>
-      {bothGuestGame(meta) ? (
+      {!recordable(meta) ? (
         <div className="text-sm text-neutral-400">guest game — not recorded</div>
+      ) : meta.botId ? (
+        <div className="text-sm text-neutral-400">recorded vs the bettybots</div>
       ) : isGuestGame(meta) ? (
         <div className="text-sm text-neutral-400">vs Guest — recorded for the other player</div>
       ) : null}

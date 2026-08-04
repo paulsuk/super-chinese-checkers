@@ -8,20 +8,18 @@ import {
   replaceRecords, saveGame, saveSettings,
 } from "./state/persist";
 import {
-  bothGuestGame, clearMeta, defaultMeta, loadLastMeta, loadMeta, saveLastMeta, saveMeta,
+  clearMeta, defaultMeta, loadLastMeta, loadMeta, recordable, saveLastMeta, saveMeta,
 } from "./state/meta";
 import type { GameMeta } from "./state/meta";
 import { devNearWin } from "./state/devFixtures";
-import BoardView, { cellAt } from "./ui/BoardView";
-import GestureLayer from "./ui/GestureLayer";
-import Hud from "./ui/Hud";
-import { Menu, SettingsScreen, StatsScreen, WinOverlay } from "./ui/screens";
+import BotPicker from "./ui/BotPicker";
+import GameScreen from "./ui/GameScreen";
+import { Menu, SettingsScreen, StatsScreen } from "./ui/screens";
 import SetupScreen from "./ui/SetupScreen";
-import { useMoveInput } from "./ui/useMoveInput";
 import { useViewTransform } from "./ui/useViewTransform";
 import type { GameState } from "./engine/types";
 
-type Screen = "menu" | "game" | "stats" | "settings" | "setup";
+type Screen = "menu" | "game" | "stats" | "settings" | "setup" | "botPicker";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("menu");
@@ -70,7 +68,7 @@ export default function App() {
   const act = (action: GameAction) => {
     const next = gameReducer(game, action);
     if (next === game) return;
-    if (next && next.phase === "done" && game?.phase !== "done" && meta && !bothGuestGame(meta)) {
+    if (next && next.phase === "done" && game?.phase !== "done" && meta && recordable(meta)) {
       const gameKey = `${next.startedAt}:${next.history.length}`;
       if (recordedFor.current !== gameKey) {
         recordedFor.current = gameKey;
@@ -81,13 +79,15 @@ export default function App() {
     }
     setGame(next);
   };
-  const input = useMoveInput(game, (move) => act({ type: "COMMIT_MOVE", move }));
 
   const beginGame = (m: GameMeta, state?: GameState) => {
-    input.cancel();
     setMeta(m);
-    setLastMeta(m);
-    Promise.all([saveMeta(m), saveLastMeta(m)]).catch(console.error);
+    const writes: Promise<void>[] = [saveMeta(m)];
+    if (!m.botId) {
+      setLastMeta(m);
+      writes.push(saveLastMeta(m));
+    }
+    Promise.all(writes).catch(console.error);
     if (state) setGame(state);
     else act({ type: "NEW_GAME", startedAt: new Date().toISOString() });
     setScreen("game");
@@ -96,6 +96,11 @@ export default function App() {
   const startNew = () => {
     if (game && game.phase !== "done" && !confirm("Abandon the current game?")) return;
     setScreen("setup");
+  };
+
+  const startBots = () => {
+    if (game && game.phase !== "done" && !confirm("Abandon the current game?")) return;
+    setScreen("botPicker");
   };
 
   const addPlayer = (name: string) => {
@@ -118,6 +123,14 @@ export default function App() {
       />
     );
   }
+  if (screen === "botPicker") {
+    return (
+      <BotPicker
+        roster={settings.roster} lastMeta={lastMeta}
+        onStart={(m) => beginGame(m)} onCancel={() => setScreen("menu")}
+      />
+    );
+  }
   if (screen === "setup") {
     return (
       <SetupScreen
@@ -131,31 +144,12 @@ export default function App() {
   }
   if (screen === "game" && game && meta) {
     return (
-      <div className="relative h-full bg-neutral-900">
-        <GestureLayer view={view} onTap={(pt) => input.tap(cellAt(pt))}>
-          <BoardView
-            pieces={game.pieces} staged={input.staged}
-            shake={input.shake} transform={view.transform}
-            palette={meta.palette}
-          />
-        </GestureLayer>
-        <Hud
-          game={game} names={meta.players} palette={meta.palette}
-          stagedReady={!!input.staged && input.staged.path.length >= 2}
-          onLockIn={input.lockIn}
-          onCancel={() => input.cancel()}
-          onUndo={() => { input.cancel(); act({ type: "UNDO" }); }}
-          onResetView={view.reset}
-          onMenu={() => setScreen("menu")}
-        />
-        {game.phase === "done" && (
-          <WinOverlay
-            game={game} meta={meta}
-            onNewGame={startNew}
-            onMenu={() => { setGame(null); setMeta(null); setScreen("menu"); }}
-          />
-        )}
-      </div>
+      <GameScreen
+        game={game} meta={meta} view={view} act={act}
+        onMenu={() => setScreen("menu")}
+        onNewGame={meta.botId ? startBots : startNew}
+        onExitToMenu={() => { setGame(null); setMeta(null); setScreen("menu"); }}
+      />
     );
   }
   return (
@@ -163,6 +157,7 @@ export default function App() {
       hasGame={!!game}
       onContinue={() => setScreen("game")}
       onNew={startNew}
+      onBots={startBots}
       onStats={() => setScreen("stats")}
       onSettings={() => setScreen("settings")}
       onDevNearWin={

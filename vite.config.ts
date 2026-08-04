@@ -13,6 +13,9 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon-180x180.png", "icon.svg"],
+      // Workbox precaches only js/css/html by default — bundled images (the bettybot
+      // avatars) must be listed or they 404 offline, which is the whole point of the app.
+      workbox: { globPatterns: ["**/*.{js,css,html,png,svg,ico}"] },
       manifest: {
         name: "Super Chinese Checkers",
         short_name: "Super CC",

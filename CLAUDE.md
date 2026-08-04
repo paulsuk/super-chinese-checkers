@@ -18,10 +18,35 @@ player with all 30 pieces home; the loser then finishes out alone and the extra 
 taken = margin of victory. App enforces rules but shows no hints. Full detail in
 `work\archive\2026-07-10-super-chinese-checkers-design.md`.
 
+## Single-player (the bettybots)
+
+Three AI opponents — Mia, June-y, Lilibeth — selected from their own picker screen. The
+bot always plays player 0 (top three colors); the human plays the bottom.
+
+- `src/bots/` is pure TS, no React imports, like `src/engine/`. A bot is entirely data:
+  `BotProfile` in `profiles.ts` carries its brain weights, palette, avatar key, and
+  dialogue pools, so a new bot is one profile object plus one avatar image.
+- Difficulty is weights + temperature + topK + `replyCheck`; there is no search. The
+  `stray` weight (depth inside a non-target corner) is load-bearing, not flavour:
+  without it greedy play walks pieces into dead-end corners, permanently locking a
+  colour out of home, and games stop terminating.
+- `tests/bots/selfplay.test.ts` is the tuning instrument and the guard — it asserts the
+  difficulty ordering and that every seeded game finishes. Any weight change reruns it.
+- The engine has **no pass rule**: a mover with zero legal moves is theoretically
+  possible. `useBotTurn` and `AUTO_FINISH` both degrade instead of throwing; do not
+  assume a legal move always exists.
+- Bot identity is `BotId`, never a display name. Records store `botId` plus `botWon`
+  (which side won, captured at play time) so renaming a bot cannot re-attribute
+  history; display names come from `botName(id)`.
+- Bot games never touch PvP standings: `aggregates()` drops records carrying a `botId`,
+  and `botAggregates()` feeds the separate vs-the-bettybots section.
+
 ## Conventions
 
 - Stack: Vite + React + TS + Tailwind; pure-TS rules engine in `src/engine/` (no React
   imports), state/persistence in `src/state/`, components in `src/ui/`.
+- Bundled images must match `workbox.globPatterns` in `vite.config.ts` or they 404
+  offline — the defaults precache only js/css/html.
 - Engine changes require Vitest coverage; UI verified on-device before deploy. Pure logic
   extracted from UI (e.g. `src/ui/setupDraft.ts`) is unit-tested; there is no DOM test env.
 - Per-game display lives in `GameMeta { palette[6], players[2] }` (`src/state/meta.ts`, own
