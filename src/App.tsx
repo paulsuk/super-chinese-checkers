@@ -147,7 +147,7 @@ export default function App() {
       <GameScreen
         game={game} meta={meta} view={view} act={act}
         onMenu={() => setScreen("menu")}
-        onNewGame={startNew}
+        onNewGame={meta.botId ? startBots : startNew}
         onExitToMenu={() => { setGame(null); setMeta(null); setScreen("menu"); }}
       />
     );

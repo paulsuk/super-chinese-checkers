@@ -79,8 +79,10 @@ export function StatsScreen({ records, roster, onBack }: {
         <span className="text-neutral-400">Avg moves</span><span>{num(a.avgMoves, 0)}</span>
         <span className="text-neutral-400">Avg length</span><span>{min(a.avgDurationMs)}</span>
       </div>
+      {/* recent list is PvP-only so it agrees with the game count and standings above;
+          bot results live in their own section below */}
       <div className="mt-4 w-full max-w-sm">
-        {records.slice(-10).reverse().map((r, i) => (
+        {records.filter((r) => !r.botId).slice(-10).reverse().map((r, i) => (
           <div key={`${r.finishedAt}-${i}`} className="flex justify-between border-b border-neutral-800 py-2 text-sm">
             <span>{r.winnerName} beat {r.loserName} by {r.marginOfVictory}</span>
             <span className="text-neutral-400">{r.moveCount} moves · {r.finishedAt.slice(0, 10)}</span>
