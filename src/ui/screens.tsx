@@ -7,7 +7,7 @@ import { isGuestGame, recordable } from "../state/meta";
 import type { GameMeta } from "../state/meta";
 import type { GameState } from "../engine/types";
 import { Avatar } from "./avatars";
-import { BOTS, botById } from "../bots/profiles";
+import { BOTS, botById, botName } from "../bots/profiles";
 
 function Btn({ onClick, children, primary = false }: {
   onClick(): void; children: React.ReactNode; primary?: boolean;
@@ -97,7 +97,7 @@ export function StatsScreen({ records, roster, onBack }: {
               className="flex items-center justify-between border-b border-neutral-800 py-2">
               <span className="flex items-center gap-2">
                 <Avatar id={botById(r.botId)?.avatar ?? r.botId} size={24} />
-                {r.playerName} vs {botById(r.botId)?.name ?? r.botId}
+                {r.playerName} vs {botName(r.botId)}
               </span>
               <span className="tabular-nums">
                 {r.wins}<span className="text-neutral-500">–</span>{r.losses}

@@ -89,3 +89,23 @@ describe("AUTO_FINISH", () => {
     expect(gameReducer(s, { type: "AUTO_FINISH" })).toBe(s);
   });
 });
+
+describe("AUTO_FINISH with no legal move", () => {
+  // The engine has no pass rule, so chooseMove throws when the mover has nothing to
+  // play. AUTO_FINISH must keep whatever it already achieved rather than let the throw
+  // escape the reducer and discard the run.
+  const stuck: GameState = {
+    pieces: Object.fromEntries(
+      COLORS_OF_PLAYER[0]!.flatMap((c) =>
+        [...targetCells(c as ColorId)].map((id) => [id, c as ColorId]),
+      ),
+    ),
+    toMove: 1, phase: "finishOut", winner: 0, winIndex: 0,
+    history: [{ color: 0, path: ["0,0", "0,1"] }], startedAt: start,
+  };
+
+  it("returns the state instead of throwing", () => {
+    expect(() => gameReducer(stuck, { type: "AUTO_FINISH" })).not.toThrow();
+    expect(gameReducer(stuck, { type: "AUTO_FINISH" })).toEqual(stuck);
+  });
+});

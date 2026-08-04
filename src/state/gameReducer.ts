@@ -28,7 +28,15 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
       if (!state || state.phase !== "finishOut") return state;
       let s = state;
       for (let i = 0; s.phase !== "done" && i < 1000; i++) {
-        s = applyMove(s, chooseMove(s, AUTOPILOT_BRAIN, () => 0));
+        let move;
+        try {
+          move = chooseMove(s, AUTOPILOT_BRAIN, () => 0);
+        } catch {
+          // No legal move for the finishing player (the engine has no pass rule).
+          // Keep the moves already made rather than discarding the whole run.
+          break;
+        }
+        s = applyMove(s, move);
       }
       return s;
     }

@@ -41,8 +41,12 @@ export interface LinePools {
   lose: Line[];
 }
 
+/** Stable identity for a bot. Persisted in game meta and stats records; display
+ *  names are looked up from it, never compared against. Adding a bot adds a member. */
+export type BotId = "mia" | "june" | "lilibeth";
+
 export interface BotProfile {
-  id: string;
+  id: BotId;
   name: string;
   tagline: string;
   difficulty: 1 | 2 | 3;

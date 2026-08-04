@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { BOTS } from "../bots/profiles";
-import { DEFAULT_ASSIGNMENT } from "../config/palette";
-import { GUEST } from "../state/meta";
+import { botMeta, GUEST } from "../state/meta";
 import type { GameMeta } from "../state/meta";
 import { Avatar } from "./avatars";
 
@@ -16,16 +15,7 @@ export default function BotPicker({ roster, lastMeta, onStart, onCancel }: Props
   const [botId, setBotId] = useState(BOTS[0]!.id);
   const [human, setHuman] = useState(roster[0] ?? GUEST);
   const names = [...roster, GUEST];
-  const start = () => {
-    const bot = BOTS.find((b) => b.id === botId)!;
-    const bottom3 =
-      lastMeta && !lastMeta.botId ? lastMeta.palette.slice(3) : [...DEFAULT_ASSIGNMENT].slice(3);
-    onStart({
-      palette: [...bot.palette, ...bottom3],
-      players: [bot.name, human],
-      botId: bot.id,
-    });
-  };
+  const start = () => onStart(botMeta(BOTS.find((b) => b.id === botId)!, human, lastMeta));
   return (
     <div className="flex h-full flex-col items-center gap-5 overflow-y-auto bg-neutral-900 p-6 pt-[max(1.5rem,env(safe-area-inset-top))] text-neutral-100">
       <h1 className="text-2xl font-semibold">Play the bettybots</h1>

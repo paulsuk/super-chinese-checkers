@@ -1,6 +1,6 @@
 import { marginSoFar } from "../engine/rules";
 import type { GameState } from "../engine/types";
-import { BOTS, botById } from "../bots/profiles";
+import { BOTS, botName } from "../bots/profiles";
 import { GUEST, ROSTER_DEFAULTS } from "./meta";
 import type { GameMeta } from "./meta";
 
@@ -11,7 +11,12 @@ export interface GameRecord {
   moveCount: number;
   durationMs: number;
   marginOfVictory: number;
+  // Kept as a plain string, not BotId: a backup exported by a build that knows a bot
+  // this one does not must survive import and still render (botName falls back to the id).
   botId?: string;
+  // Who won, recorded at play time. Names are display text and can be edited later,
+  // so attribution never re-derives itself by comparing them.
+  botWon?: boolean;
 }
 export interface Settings { roster: string[]; }
 export interface StatsExport { settings: Settings; records: GameRecord[]; }
@@ -30,7 +35,8 @@ export function recordFromGame(state: GameState, meta: GameMeta, finishedAt: str
     moveCount: state.history.length,
     durationMs: Date.parse(finishedAt) - Date.parse(state.startedAt),
     marginOfVictory: marginSoFar(state)!,
-    ...(meta.botId ? { botId: meta.botId } : {}),
+    // the bot always plays player 0 (top), so the winner index says who won
+    ...(meta.botId ? { botId: meta.botId, botWon: state.winner === 0 } : {}),
   };
 }
 
@@ -87,8 +93,9 @@ export function botAggregates(records: GameRecord[]): BotStanding[] {
   const map = new Map<string, BotStanding>();
   for (const r of records) {
     if (!r.botId) continue;
-    const botName = botById(r.botId)?.name ?? r.botId;
-    const humanWon = r.winnerName !== botName;
+    // Records written before botWon existed only carry names; fall back to comparing
+    // against the bot's current name for those.
+    const humanWon = r.botWon === undefined ? r.winnerName !== botName(r.botId) : !r.botWon;
     const playerName = humanWon ? r.winnerName : r.loserName;
     const key = `${playerName}\u0000${r.botId}`;
     const row = map.get(key) ?? { playerName, botId: r.botId, wins: 0, losses: 0, bestMargin: null };
@@ -98,7 +105,7 @@ export function botAggregates(records: GameRecord[]): BotStanding[] {
     } else row.losses++;
     map.set(key, row);
   }
-  const order = new Map(BOTS.map((b, i) => [b.id, i]));
+  const order = new Map<string, number>(BOTS.map((b, i) => [b.id, i]));
   return [...map.values()].sort(
     (a, b) => a.playerName.localeCompare(b.playerName) ||
       (order.get(a.botId) ?? 99) - (order.get(b.botId) ?? 99),
@@ -117,7 +124,8 @@ function isRecord(r: unknown): r is GameRecord {
     typeof o.moveCount === "number" &&
     typeof o.durationMs === "number" &&
     typeof o.marginOfVictory === "number" &&
-    (o.botId === undefined || typeof o.botId === "string")
+    (o.botId === undefined || typeof o.botId === "string") &&
+    (o.botWon === undefined || typeof o.botWon === "boolean")
   );
 }
 

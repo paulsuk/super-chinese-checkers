@@ -41,8 +41,11 @@ describe("self-play", () => {
     expect(r2.done).toBe(25);
   }, 240_000);
 
+  // Floors sit just under the current results (25/25 and 17/25). The harness is fully
+  // seeded, so these only move when a profile's numbers change — a failure here means
+  // the difficulty ladder really shifted, not that the run was unlucky.
   it("difficulty ordering holds: june beats mia, lilibeth beats june", () => {
-    expect(record(june!, mia!, 25).aWins).toBeGreaterThanOrEqual(17);
-    expect(record(lilibeth!, june!, 25).aWins).toBeGreaterThanOrEqual(15);
+    expect(record(june!, mia!, 25).aWins).toBeGreaterThanOrEqual(22);
+    expect(record(lilibeth!, june!, 25).aWins).toBeGreaterThanOrEqual(16);
   }, 240_000);
 });

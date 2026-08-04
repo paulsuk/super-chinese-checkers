@@ -12,6 +12,7 @@ import { useBotTurn } from "./useBotTurn";
 import { useDialogue } from "./useDialogue";
 import { useMoveAnimation } from "./useMoveAnimation";
 import { useMoveInput } from "./useMoveInput";
+import { undoBlocked, undoPairs } from "./undoPolicy";
 import type { useViewTransform } from "./useViewTransform";
 
 interface Props {
@@ -50,19 +51,12 @@ export default function GameScreen({ game, meta, view, act, onMenu, onNewGame, o
         stagedReady={!!input.staged && input.staged.path.length >= 2}
         avatar={profile ? <Avatar id={profile.avatar} size={32} /> : undefined}
         thinking={thinking}
-        // bot games: disable while the bot is to move (thinking or auto finish-out), at the
-        // win boundary (undoing the bot's winning move would un-win the game), and on the
-        // opener (pair-undo is a designed no-op there, so absorb the press instead of a dead button)
-        undoDisabled={profile !== null && (
-          game.toMove === 0 ||
-          (game.phase === "finishOut" && game.history.length - 1 === game.winIndex) ||
-          game.history.length < 2
-        )}
+        undoDisabled={undoBlocked(game, profile !== null)}
         onLockIn={input.lockIn}
         onCancel={() => input.cancel()}
         onUndo={() => {
           input.cancel();
-          act({ type: "UNDO", pair: profile !== null && game.phase === "playing" });
+          act({ type: "UNDO", pair: undoPairs(game, profile !== null) });
         }}
         onResetView={view.reset}
         onMenu={onMenu}

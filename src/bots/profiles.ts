@@ -24,13 +24,11 @@ export const BOTS: readonly BotProfile[] = [
     palette: ["#f472b6", "#22d3ee", "#fb923c"],
     think: { minMs: 400, maxMs: 900 },
     brain: {
-      // Sloppy on purpose: chain-obsessed, careless about filling home, and hot enough
-      // to pick near-randomly. `stray`/`straggler` stay high anyway — those are what keep
-      // a game finishing at all, and at this temperature they need a wide score gap to survive.
-      // Nerf 2026-08-02: quality weights halved (forward/homeFill/chain) so she picks
-      // worse directions, but the safety terms (stray, straggler) keep their full
-      // temp-6 ratios — dropping those below ~exp(2) per depth brings back corner
-      // squatting and the no-legal-moves crash.
+      // Sloppy on purpose: the quality terms (forward, homeFill, chain) are deliberately
+      // small so the high temperature can outvote them and she picks poor directions.
+      // `stray` and `straggler` stay large regardless — those are what keep a game
+      // finishing at all, and at this temperature they need a wide score gap to survive.
+      // Scaling them down with the others brings back corner squatting and dead ends.
       weights: { forward: 0.5, straggler: 1.2, homeFill: 0.25, chain: 1.5, gift: 0, stray: 12 },
       temperature: 6,
       topK: 22,
@@ -157,3 +155,9 @@ export const BOTS: readonly BotProfile[] = [
 
 export const botById = (id: string): BotProfile | null =>
   BOTS.find((b) => b.id === id) ?? null;
+
+/** Display name for a stored id. Falls back to the raw id so a record written by a
+ *  build that knew a bot this one does not still renders something. */
+export const botName = (id: string): string => botById(id)?.name ?? id;
+
+

@@ -179,4 +179,68 @@ describe("bot game records", () => {
     expect(rows).toContainEqual(
       { playerName: "Christina", botId: "june", wins: 0, losses: 1, bestMargin: null });
   });
+
+  it("recordFromGame stores which side the bot played", () => {
+    const done = (winner: 0 | 1) => ({ phase: "done", winner, pieces: {}, toMove: winner,
+      winIndex: 0, startedAt: "2026-08-01T00:00:00.000Z",
+      history: [{ color: 0, path: ["a", "b"] }] }) as never;
+    const meta = { palette: [], players: ["Mia", "Paul"], botId: "mia" } as never;
+    const at = "2026-08-01T01:00:00.000Z";
+    expect(recordFromGame(done(0), meta, at).botWon).toBe(true);   // bot is player 0
+    expect(recordFromGame(done(1), meta, at).botWon).toBe(false);
+    const pvp = { palette: [], players: ["Paul", "Christina"] } as never;
+    expect(recordFromGame(done(0), pvp, at).botWon).toBeUndefined();
+  });
+
+  it("attributes by the recorded side, so renaming a bot cannot flip past results", () => {
+    // stored under the bot's old display name; profiles.ts now calls her something else
+    const stale = { ...rec("Paul", "Mia the Capybara", "mia", 6), botWon: false };
+    const rows = botAggregates([stale]);
+    expect(rows).toEqual([
+      { playerName: "Paul", botId: "mia", wins: 1, losses: 0, bestMargin: 6 },
+    ]);
+  });
+
+  it("attributes correctly when the human shares the bot's name", () => {
+    const collided = { ...rec("Mia", "Mia", "mia", 3), botWon: false };
+    expect(botAggregates([collided])).toEqual([
+      { playerName: "Mia", botId: "mia", wins: 1, losses: 0, bestMargin: 3 },
+    ]);
+  });
+
+  it("falls back to name matching for records written before botWon existed", () => {
+    const legacy = rec("Paul", "Mia", "mia", 5); // no botWon key at all
+    expect(botAggregates([legacy])).toEqual([
+      { playerName: "Paul", botId: "mia", wins: 1, losses: 0, bestMargin: 5 },
+    ]);
+  });
+
+  it("sorts by player name, then by bot difficulty order", () => {
+    const rows = botAggregates([
+      { ...rec("Paul", "Lilibeth", "lilibeth"), botWon: false },
+      { ...rec("Ann", "Mia", "mia"), botWon: false },
+      { ...rec("Paul", "Mia", "mia"), botWon: false },
+      { ...rec("Paul", "June-y", "june"), botWon: false },
+    ]);
+    expect(rows.map((r) => `${r.playerName}/${r.botId}`)).toEqual([
+      "Ann/mia", "Paul/mia", "Paul/june", "Paul/lilibeth",
+    ]);
+  });
+
+  it("keeps bot records through an export/import round trip", () => {
+    const original = { ...rec("Paul", "Mia", "mia", 7), botWon: false };
+    const back = parseImport(serializeExport({
+      settings: { roster: ["Paul", "Christina"] }, records: [original],
+    }));
+    expect(back?.records[0]).toEqual(original);
+  });
+
+  it("keeps records whose botId this build does not know", () => {
+    const future = { ...rec("Paul", "Zoe", "zoe", 2), botWon: false };
+    const back = parseImport(serializeExport({
+      settings: { roster: ["Paul", "Christina"] }, records: [future],
+    }));
+    expect(back?.records).toHaveLength(1);
+    expect(botAggregates(back!.records)[0]?.botId).toBe("zoe");
+  });
 });
