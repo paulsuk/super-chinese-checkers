@@ -40,17 +40,16 @@ export const BOTS: readonly BotProfile[] = [
       intro: [
         "hiii!! ok ok ok. me first? me first!",
         "Mia-bettybot in the HOUSE. wait. how do the pieces go again?",
-        "we got this. wait, who's we? oh no, it's just me",
+        { text: "BOP-PY-BOP-PY-BOP-PY-BOP! BOP-PY-BOP-PY-BOP-PY-BOP!", cheer: true },
       ],
       bigChain: [
         { text: "GO MIA! GO MIA! GO MIA!", cheer: true },
-        "BACK-IT-UP back-it-up wooooo!",
-        "did everybody see that?? somebody clip it!",
+        { text: "BACK-IT-UP! BACK-IT-UP! BACK-IT-UP!", cheer: true },
+        { text: "CAPY-MIA CAPY-MIA CAPY-MIA CAPY-MIA", cheer: true },
       ],
       humanBigChain: [
-        "whoa whoa whoa. that was so cool. wait, that was against me",
-        "ok that was honestly kind of amazing. can you teach me later?",
-        { text: "GO... you? go you!", cheer: true },
+        "HOW DID YOU DO THAT! CAN YOU TEACH ME",
+        "I NEED MY NIGHTGOWN",
       ],
       closingIn: [
         "is it getting spicy in here or is it just my headphones",
@@ -58,12 +57,12 @@ export const BOTS: readonly BotProfile[] = [
         "somebody's almost home!! is it me?? please be me",
       ],
       win: [
-        "WAIT. I WON?? cue boppy! this one goes out to my cheer squad!",
-        { text: "GO MIA! GO MIA! SHE DID IT!", cheer: true },
+        "WAIT. I WON?? cue boppy! this one goes out to the cheerleading squad!",
+        { text: "GO MIA! GO MIA! GO MIA!", cheer: true },
       ],
       lose: [
         "aw. AW. ok that's fair, you were so good. rematch after my set?",
-        "i lost the game but i WON a friend. also please play boppy on your way out",
+        "thank you everyone for coming to my set!",
       ],
     },
   },
@@ -83,9 +82,8 @@ export const BOTS: readonly BotProfile[] = [
     },
     lines: {
       intro: [
-        "June-y-bettybot. Sit up straight, we are starting.",
+        "I am June-y-bettybot. RAWR. RAWR. RAWR. We are starting... now.",
         "I have graded a lot of games today. Do not disappoint me.",
-        "Rule one: forward. Rule two: show your work.",
       ],
       bigChain: [
         "Observe: a simple application of geometry.",
@@ -93,21 +91,19 @@ export const BOTS: readonly BotProfile[] = [
         "Textbook. I would give myself full marks.",
       ],
       humanBigChain: [
-        "Hm. Correct technique. I did not say I liked it.",
-        "Partial credit. The setup was luckier than you think.",
-        "Acceptable. Do it twice and I will believe it was on purpose.",
+        "Hm. Correct technique. RAWR.",
+        "I DIDN'T CALCULATE THAT",
       ],
       closingIn: [
-        "The endgame is arithmetic now. Do not get sloppy.",
-        "Every move you waste, I am counting it.",
-        "Check your stragglers. I always check mine.",
+        "The endgame is arithmetic now.",
+        "Every move you waste leads me closer to my Field's medal?",
       ],
       win: [
         "As calculated. Review your mistakes and come back.",
         "The math was never on your side. See me after class.",
       ],
       lose: [
-        "...Recount. Hm. The result stands. Well done — this once.",
+        "...Recount. Hmph. RAWR RAWR.",
         "You have passed. Extra homework anyway: play me again.",
       ],
     },
@@ -128,32 +124,32 @@ export const BOTS: readonly BotProfile[] = [
     },
     lines: {
       intro: [
-        "I built the bettybots. Beating me is, technically, a firmware issue.",
+        "I AM LILIBETTY-BOT.",
         "Lilibeth. Creator, visionary, very good girl. Your move first? No — mine.",
         "I ran the simulations. You lose in most of them. Shall we find out which this is?",
       ],
       bigChain: [
         "Yes, that was planned four turns ago. Keep up.",
-        "A small demonstration of why I am the hardest setting.",
-        "Elegant, isn't it? I designed the ladder before you sat down.",
+        "A small demonstration of why my brain is so large.",
+        "Elegant, isn't it? I planned it before we began.",
       ],
       humanBigChain: [
         "Interesting. I permitted that, of course.",
-        "Noted. Recalibrating. Do not get comfortable.",
+        "YOU STOLE MY INVENTION",
         "A good jump. I invented better ones.",
       ],
       closingIn: [
         "The board is converging exactly as projected.",
-        "Endgame protocols engaged. Try to make it dignified.",
-        "Almost done. I have already drafted my victory remarks.",
+        "Endgame protocols engaged.",
+        "Almost done. I have already drafted my victory speech.",
       ],
       win: [
-        "As projected. The wings are not just decorative.",
-        "Update your priors: still undefeated in this household. Mostly.",
+        "As we always expected, Lilibeth number one.",
+        { text: "Lilibettybots in the house!!!!", cheer: true },
       ],
       lose: [
         "Impossible. ...Improbable. ...Impressive. Rematch, immediately.",
-        "You beat the creator. Enjoy this feeling; I am patching it out.",
+        "I'M SENDING YOU TO THE DUNGEON",
       ],
     },
   },
